@@ -20,6 +20,20 @@
   notify:
     - docker-rsyslog restart
 
+- name: copy docker logrotate configurations
+  copy:
+    src: "docker.logrotate"
+    dest: "/etc/logrotate.d/docker"
+    mode: 0644
+    owner: root
+    group: root
+
+- name: create docker log archive
+  file:
+    path: "/var/log/docker/archive"
+    mode: 0755
+    state: directory
+
 - name: create directory for systemd drop-ins
   file:
     path: /etc/systemd/system/docker.service.d
