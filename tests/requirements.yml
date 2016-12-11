@@ -1,0 +1,17 @@
+- src: epiloque.provision_docker
+  name: provision_docker
+
+- src: epiloque.epel
+  name: epiloque.epel
+
+- src: epiloque.packagecloud
+  name: epiloque.packagecloud
+
+- src: epiloque.ferm
+  name: epiloque.ferm
+
+- src: epiloque.logrotate
+  name: epiloque.logrotate
+
+- src: epiloque.lvm
+  name: epiloque.lvm

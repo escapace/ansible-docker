@@ -1,0 +1,36 @@
+domain ip table nat {
+    chain PREROUTING {
+        mod addrtype dst-type LOCAL jump DOCKER;
+    }
+
+    chain OUTPUT {
+        daddr !127.0.0.0/8 mod addrtype dst-type LOCAL jump DOCKER;
+    }
+
+    chain POSTROUTING {
+        saddr 172.17.0.0/16 outerface !docker0 MASQUERADE;
+    }
+
+    chain DOCKER {
+        interface docker0 jump RETURN;
+    }
+
+}
+
+domain ip6 table filter {
+    chain FORWARD { 
+        jump DOCKER-ISOLATION;
+
+        outerface docker0 jump DOCKER;
+
+        outerface docker0 mod conntrack ctstate (ESTABLISHED RELATED) ACCEPT;
+        interface docker0 outerface !docker0 ACCEPT;
+        interface docker0 outerface docker0 DROP;
+    }
+
+    chain DOCKER {}
+
+    chain DOCKER-ISOLATION {
+        RETURN;
+    }
+}
