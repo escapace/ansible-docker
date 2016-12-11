@@ -1,0 +1,4 @@
+---
+
+- include: docker.yml
+  when: ansible_os_family == "RedHat"

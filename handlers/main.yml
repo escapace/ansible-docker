@@ -1,0 +1,16 @@
+---
+
+- name: docker restart
+  command: systemctl daemon-reload
+  notify:
+    - docker-service-restart
+
+- name: docker service-restart
+  service:
+    name: docker
+    state: restarted
+
+- name: docker-rsyslog restart
+  service:
+    name: rsyslog
+    state: restarted

@@ -1,0 +1,32 @@
+- name: Bring up docker containers
+  hosts: localhost
+  roles:
+    - role: provision_docker
+      provision_docker_inventory_group: "{{ groups['test-images'] }}"
+
+- hosts: test-images
+  vars:
+    lvm_physical_device: "/dev/loop32"
+  tasks:
+  - name: install required packages
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - parted
+  - name: ensure loop kernel module is present
+    modprobe: name=loop state=present
+  - name: create a disk image
+    command: dd if=/dev/zero of=/tmp/pv bs=1 count=0 seek=2G
+  - name: create disk label
+    command: /sbin/parted /tmp/pv mklabel msdos
+  - name: detach a loop device
+    shell: losetup -d "{{ lvm_physical_device }}" || true
+  - name: remove a loop device
+    shell: rm "{{ lvm_physical_device }}" || true warn=false
+  - name: create a loop device
+    shell: mknod -m 0660 "{{ lvm_physical_device }}" b 7 32
+  - name: loopback attach
+    command: losetup "{{ lvm_physical_device }}" /tmp/pv
+  # roles:
+  # - role: epiloque.docker

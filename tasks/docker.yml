@@ -1,0 +1,88 @@
+---
+
+- name: enable Docker, Inc. yum repo
+  copy:
+    src: docker.repo
+    dest: /etc/yum.repos.d/docker.repo
+
+- name: create rsyslog.d
+  file:
+    dest: /etc/rsyslog.d
+    state: directory
+
+- name: create docker entry for syslogd
+  copy:
+    dest: /etc/rsyslog.d/10-docker.conf
+    content: |
+      # Docker logging
+      :syslogtag, isequal, "docker:"  /var/log/docker/docker.log
+      & ~
+  notify:
+    - docker-rsyslog restart
+
+- name: create directory for systemd drop-ins
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+    mode: 0755
+
+- name: systemd drop-in for options
+  template:
+    src:  "{{ item }}.j2"
+    dest: "/etc/systemd/system/docker.service.d/{{ item }}"
+  with_items:
+    - 10-options.conf
+    - 12-network-options.conf
+  notify:
+    - docker restart
+
+- name: systemd drop-in for ExecStart
+  copy:
+    src: 20-ExecStart.conf.j2
+    dest: /etc/systemd/system/docker.service.d/20-ExecStart.conf
+  notify:
+    - docker restart
+
+- name: install docker packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ docker_package }}"
+    - "{{ docker_package }}-selinux"
+
+- name: ensure docker config dir exists
+  file:
+    path: /root/.docker
+    state: directory
+
+- name: setup private docker registry credentials
+  when: docker_registries is defined and docker_registries  != ""
+  template:
+    src: config.json.j2
+    dest: /root/.docker/config.json
+  register: docker_registry_credentials
+
+- include: lvm.yml
+
+- name: create the docker ferm configuration
+  template: src=templates/1003-docker.conf.j2 dest=/etc/ferm/ferm.d/1003-docker.conf owner=root group=root
+  notify:
+    - ferm restart
+    - docker restart
+
+- name: enable docker
+  service:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: install docker-gc
+  yum:
+    name: docker-gc
+    state: latest
+  when: docker_gc_install is defined and docker_gc_install|bool
+
+- name: create docker-gc cron job
+  template: src=templates/0docker-gc-hourly.cron.j2 dest=/etc/cron.hourly/0docker-gc-hourly.cron owner=root group=root mode=755
+  when: docker_gc_install is defined and docker_gc_install|bool

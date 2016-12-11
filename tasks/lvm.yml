@@ -1,0 +1,20 @@
+---
+
+- name: configure lvm for docker
+  template:
+    src: docker-volume.conf.j2
+    dest: /etc/filesystems.d/20-docker-volume.conf
+    mode: 0644
+
+- name: systemd drop-in for storage options
+  template:
+    src:  "{{ item }}.j2"
+    dest: "/etc/systemd/system/docker.service.d/{{ item }}"
+  with_items:
+    - 14-storage-options.conf
+  notify:
+    - docker restart
+
+- name: process with escapace storage setup
+  shell: "/usr/bin/storage-setup"
+  changed_when: false
