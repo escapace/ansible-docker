@@ -1,7 +1,16 @@
+# vim:ft=ansible
+
 ---
 
 - name: Bring down docker containers
   hosts: localhost
+  tasks:
+  - name: detach a loop device
+    shell: losetup -d "/dev/loop32" || true
+    become: true
+  - name: remove loop device
+    shell: rm /dev/loop32 || true warn=false
+    become: true
   roles:
     - role: provision_docker
       provision_docker_teardown: true
