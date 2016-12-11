@@ -16,6 +16,26 @@ docker role
 Available variables are listed below:
 
 ```yaml
+# See https://github.com/spotify/docker-gc
+docker_gc_install: true
+# Docker log options
+# See https://docs.docker.com/engine/admin/logging/overview/
+docker_log_driver: journald
+# Docker ipv6
+# See https://docs.docker.com/engine/userguide/networking/default_network/ipv6/
+docker_ipv6_enabled: false
+docker_ipv6_cidr: "2001:db8:1::/64"
+# Selinux
+docker_selinux_enabled: false
+# Storage options
+# Possible values: overlay (default), devicemapper, btrfs (unsupported)
+docker_storage_driver: overlay
+# Refer to commentaries in ../templates/docker-storage-setup.conf.j2
+# or `man lvcreate` for acceptable sizes, and their syntax
+docker_volume_name: docker
+docker_lvm_data_volume_size: 80%FREE
+docker_lvm_data_volume_size_min: 2G
+docker_lvm_auto_extend_pool: yes
 ```
 
 ## License
