@@ -4,7 +4,7 @@
   hosts: localhost
   tasks:
   - name: create a loop device
-    shell: mknod -m 0660 /dev/loop32 b 7 32
+    shell: mknod -m 0660 /dev/sdz b 7 32
     become: true
   roles:
     - role: provision_docker
@@ -12,7 +12,7 @@
 
 - hosts: test-images
   vars:
-    lvm_physical_device: "/dev/loop32"
+    lvm_physical_device: /dev/sdz
   tasks:
   - name: install required packages
     yum:
@@ -22,23 +22,31 @@
       - parted
   - name: create a disk image
     command: dd if=/dev/zero of=/tmp/pv bs=1 count=0 seek=2G
-  - name: create disk label
-    command: /sbin/parted /tmp/pv mklabel gpt
   - name: create a loop device
-    shell: mknod -m 0660 /dev/loop32 b 7 32
+    shell: mknod -m 0660 /dev/sdz b 7 32
   - name: loopback attach
-    command: losetup /dev/loop32 /tmp/pv
-  - name: check that /dev/loop32 is a block device
+    command: losetup /dev/sdz /tmp/pv
+  - name: check that /dev/sdz is a block device
     stat:
-      path: /dev/loop32
+      path: /dev/sdz
       get_md5: false
       get_checksum: false
     register: lvm_physical_device_stats
-  - name: fail if /dev/loop/32 is not a block device
+  - name: fail if /dev/sdz is not a block device
     fail:
-      msg: "/dev/loop32 is not a block device"
+      msg: "/dev/sdz is not a block device"
     when:
       lvm_physical_device_stats.stat.isblk is defined and lvm_physical_device_stats.stat.isblk == False
+  - name: create disk label
+    command: /sbin/parted /dev/sdz mklabel gpt
+  - shell: ls -al /dev/sdz
+    register: result
+  - debug:
+      var: result
 
-  # roles:
-  # - role: epiloque.docker
+- hosts: test-images
+  vars:
+    lvm_physical_device: /dev/sdz
+    docker_role_debug: true
+  roles:
+  - role: epiloque.docker

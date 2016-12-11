@@ -15,6 +15,7 @@
   notify:
     - docker restart
 
-- name: process with escapace storage setup
+- name: do the storage setup
   shell: "/usr/bin/storage-setup"
   changed_when: false
+  ignore_errors: docker_role_debug

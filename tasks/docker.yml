@@ -48,6 +48,7 @@
     name: "{{ item }}"
     state: present
   with_items:
+    - rsyslog
     - "{{ docker_package }}"
     - "{{ docker_package }}-selinux"
 
@@ -76,6 +77,7 @@
     name: docker
     enabled: yes
     state: started
+  ignore_errors: docker_role_debug
 
 - name: install docker-gc
   yum:
