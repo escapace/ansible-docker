@@ -1,5 +1,11 @@
+# vim:ft=ansible:
+
 - name: Bring up docker containers
   hosts: localhost
+  tasks:
+  - name: create a loop device
+    shell: mknod -m 0660 /dev/loop32 b 7 32
+    become: true
   roles:
     - role: provision_docker
       provision_docker_inventory_group: "{{ groups['test-images'] }}"
@@ -14,19 +20,25 @@
       state: present
     with_items:
       - parted
-  # - name: ensure loop kernel module is present
-  #   modprobe: name=loop state=present
   - name: create a disk image
     command: dd if=/dev/zero of=/tmp/pv bs=1 count=0 seek=2G
   - name: create disk label
-    command: /sbin/parted /tmp/pv mklabel msdos
-  - name: detach a loop device
-    shell: losetup -d "{{ lvm_physical_device }}" || true
-  - name: remove loop device
-    shell: rm "{{ lvm_physical_device }}" || true warn=false
+    command: /sbin/parted /tmp/pv mklabel gpt
   - name: create a loop device
-    shell: mknod -m 0660 "{{ lvm_physical_device }}" b 7 32
+    shell: mknod -m 0660 /dev/loop32 b 7 32
   - name: loopback attach
-    command: losetup "{{ lvm_physical_device }}" /tmp/pv
+    command: losetup /dev/loop32 /tmp/pv
+  - name: check that /dev/loop32 is a block device
+    stat:
+      path: /dev/loop32
+      get_md5: false
+      get_checksum: false
+    register: lvm_physical_device_stats
+  - name: fail if /dev/loop/32 is not a block device
+    fail:
+      msg: "/dev/loop32 is not a block device"
+    when:
+      lvm_physical_device_stats.stat.isblk is defined and lvm_physical_device_stats.stat.isblk == False
+
   # roles:
   # - role: epiloque.docker
