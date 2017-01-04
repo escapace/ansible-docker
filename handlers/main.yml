@@ -4,11 +4,11 @@
   service:
     name: rsyslog
     state: restarted
-  ignore_errors: docker_role_debug
+  ignore_errors: docker_role_debug | bool
 
 - name: docker restart
   systemd:
     name: docker
     state: restarted
     daemon_reload: yes
-  ignore_errors: docker_role_debug
+  ignore_errors: docker_role_debug | bool

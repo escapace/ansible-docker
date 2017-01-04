@@ -91,7 +91,7 @@
     name: docker
     enabled: yes
     state: started
-  ignore_errors: docker_role_debug
+  ignore_errors: docker_role_debug | bool
 
 - name: install docker-gc
   yum:
