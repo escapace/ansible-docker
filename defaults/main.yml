@@ -51,3 +51,5 @@ docker_volume_mount: /var/lib/docker
 docker_volume_device: "/dev/{{ volume_group_name }}/{{ docker_volume_name }}"
 docker_volume_fs_type: "{% if docker_storage_driver == 'btrfs' %}btrfs{% else %}xfs{% endif %}"
 docker_volume_fs_opts: "{% if docker_volume_fs_type == 'xfs' %}-i size=512{% endif %}"
+
+docker_role_debug: false

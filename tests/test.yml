@@ -39,10 +39,6 @@
       lvm_physical_device_stats.stat.isblk is defined and lvm_physical_device_stats.stat.isblk == False
   - name: create disk label
     command: /sbin/parted /dev/sdz mklabel gpt
-  - shell: ls -al /dev/sdz
-    register: result
-  - debug:
-      var: result
 
 - hosts: test-images
   vars:
