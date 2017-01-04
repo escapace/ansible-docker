@@ -21,7 +21,6 @@ docker_lvm_auto_extend_pool: yes
 
 ########
 
-docker_role_debug: false
 docker_package_source: docker
 docker_package: docker-engine
 
