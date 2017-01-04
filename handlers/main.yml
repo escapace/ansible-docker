@@ -7,13 +7,8 @@
   ignore_errors: docker_role_debug
 
 - name: docker restart
-  command: systemctl daemon-reload
-  notify:
-    - docker service-restart
-  ignore_errors: docker_role_debug
-
-- name: docker service-restart
-  service:
+  systemd:
     name: docker
     state: restarted
+    daemon_reload: yes
   ignore_errors: docker_role_debug
