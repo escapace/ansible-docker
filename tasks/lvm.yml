@@ -1,12 +1,14 @@
 ---
 
 - name: configure lvm for docker
+  register: docker_storage_volume
   template:
     src: docker-volume.conf.j2
     dest: /etc/filesystems.d/20-docker-volume.conf
     mode: 0644
 
 - name: systemd drop-in for storage options
+  register: docker_storage_options
   template:
     src:  "{{ item }}.j2"
     dest: "/etc/systemd/system/docker.service.d/{{ item }}"
@@ -17,5 +19,12 @@
 
 - name: do the storage setup
   shell: "/usr/bin/storage-setup"
+  register: docker_storage_setup
+  when: (docker_storage_options|changed or docker_storage_volume|changed)
   changed_when: false
-  ignore_errors: docker_role_debug | bool
+  ignore_errors: True
+
+- name: failed to run storage-setup
+  fail: msg="failed to run storage-setup"
+  when: (docker_storage_setup|failed and (docker_role_debug|bool == false))
+

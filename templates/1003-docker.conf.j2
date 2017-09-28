@@ -17,7 +17,7 @@ domain ip table nat {
 
 }
 
-domain ip6 table filter {
+domain (ip ip6) table filter {
     chain FORWARD { 
         jump DOCKER-ISOLATION;
 

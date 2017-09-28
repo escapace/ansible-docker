@@ -43,6 +43,7 @@
 - hosts: test-images
   vars:
     lvm_physical_device: /dev/sdz
+    ferm_role_debug: true
     docker_role_debug: true
   roles:
   - role: epiloque.docker
