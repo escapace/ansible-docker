@@ -1,9 +1,34 @@
 ---
 
-- name: enable Docker, Inc. yum repo
-  copy:
-    src: docker.repo
-    dest: /etc/yum.repos.d/docker.repo
+- name: Ensure old versions of Docker are not installed.
+  package:
+    name: '{{ item }}'
+    state: absent
+  with_items:
+    - docker
+    - docker-common
+    - docker-engine
+    - docker-selinux
+
+- name: install docker dependencies
+  action: "{{ ansible_pkg_mgr }} name={{ item }} state=latest"
+  with_items:
+    - device-mapper-persistent-data
+    - lvm2
+    - yum-utils
+
+- name: Add Docker GPG key.
+  rpm_key:
+    key: https://download.docker.com/linux/centos/gpg
+    state: present
+
+- name: Add Docker repository.
+  get_url:
+    url: "{{ docker_yum_repo_url }}"
+    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
+    owner: root
+    group: root
+    mode: 0644
 
 - name: create rsyslog.d
   file:
@@ -78,7 +103,7 @@
     dest: /root/.docker/config.json
   register: docker_registry_credentials
 
-- include: lvm.yml
+- include_tasks: lvm.yml
 
 - name: create the docker ferm configuration
   template: src=templates/1003-docker.conf.j2 dest=/etc/ferm/ferm.d/1003-docker.conf owner=root group=root
@@ -91,13 +116,21 @@
     name: docker
     enabled: yes
     state: started
-  ignore_errors: docker_role_debug | bool
+  ignore_errors: True
+  register: docker_start
+
+- name: failed to start docker
+  fail: msg="failed to start docker"
+  when: (docker_start|failed and (docker_role_debug|bool == false))
 
 - name: install docker-gc
-  yum:
-    name: docker-gc
-    state: latest
   when: docker_gc_install is defined and docker_gc_install|bool
+  package:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - docker-gc
+    - cronie
 
 - name: create docker-gc cron job
   template: src=templates/0docker-gc-hourly.cron.j2 dest=/etc/cron.hourly/0docker-gc-hourly.cron owner=root group=root mode=755
