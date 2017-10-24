@@ -8,16 +8,16 @@ size = {{ docker_volume_size }}
 dev = {{ docker_volume_device }}
 fstype = {{ docker_volume_fs_type }}
 mount = {{ docker_volume_mount }}
-required_by = docker-storage-setup.service docker.service
+required_by = storage-setup.service docker.service
 
 [write:config]
 file = /etc/sysconfig/docker-storage
-content = STORAGE_OPTIONS=--storage-driver {{ docker_storage_driver }} 
+content = STORAGE_OPTIONS=--storage-driver {{ docker_storage_driver }}
 {% endif %}
 {%if docker_storage_driver == "devicemapper" %}
 [thin:docker]
 group = {{ volume_group_name }}
-# Fixed volume name, to be compatible with docker-storage-setup
+# Fixed volume name, to be compatible with storage-setup
 pool = docker-pool
 size = {{ docker_lvm_data_volume_size }}
 config = /etc/sysconfig/docker-storage

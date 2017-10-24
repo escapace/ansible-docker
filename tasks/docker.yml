@@ -77,7 +77,7 @@
 
 - name: systemd drop-in for ExecStart
   copy:
-    src: 20-ExecStart.conf.j2
+    src: ExecStart.conf
     dest: /etc/systemd/system/docker.service.d/20-ExecStart.conf
   notify:
     - docker restart
