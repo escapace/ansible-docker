@@ -1,17 +1,17 @@
-- src: epiloque.provision_docker
+- src: escapace.provision_docker
   name: provision_docker
 
-- src: epiloque.epel
-  name: epiloque.epel
+- src: escapace.epel
+  name: escapace.epel
 
-- src: epiloque.packagecloud
-  name: epiloque.packagecloud
+- src: escapace.packagecloud
+  name: escapace.packagecloud
 
-- src: epiloque.ferm
-  name: epiloque.ferm
+- src: escapace.ferm
+  name: escapace.ferm
 
-- src: epiloque.logrotate
-  name: epiloque.logrotate
+- src: escapace.logrotate
+  name: escapace.logrotate
 
-- src: epiloque.lvm
-  name: epiloque.lvm
+- src: escapace.lvm
+  name: escapace.lvm

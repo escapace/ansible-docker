@@ -46,4 +46,4 @@
     ferm_role_debug: true
     docker_role_debug: true
   roles:
-  - role: epiloque.docker
+  - role: escapace.docker
