@@ -12,7 +12,7 @@ docker_icc_enabled: false
 docker_selinux_enabled: true
 # Storage options
 # Possible values: overlay (default), devicemapper
-docker_storage_driver: devicemapper
+docker_storage_driver: overlay
 # Refer to commentaries in ../templates/docker-storage-setup.conf.j2
 # or `man lvcreate` for acceptable sizes, and their syntax
 docker_volume_name: docker
