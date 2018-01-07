@@ -1,42 +1,41 @@
-# See https://github.com/spotify/docker-gc
-docker_gc_install: true
-# Docker log options
-# See https://docs.docker.com/engine/admin/logging/overview/
-docker_log_driver: journald
-# Docker ipv6
-# See https://docs.docker.com/engine/userguide/networking/default_network/ipv6/
-docker_ipv6_enabled: false
-docker_ipv6_cidr: "2001:db8:1::/64"
-docker_icc_enabled: false
-# Selinux
-docker_selinux_enabled: true
 # Storage options
-# Possible values: overlay (default), devicemapper
-docker_storage_driver: overlay
-# Refer to commentaries in ../templates/docker-storage-setup.conf.j2
-# or `man lvcreate` for acceptable sizes, and their syntax
-docker_volume_name: docker
-docker_lvm_data_volume_size: 95%VG
 
+docker_lvm_data_volume_size: 95%VG
+docker_storage_driver: devicemapper # Possible values: devicemapper (default), overlay or vfs
+docker_volume_name: docker
+docker_volume_group_name: default
+
+# Networking
+
+docker_icc_enabled: false
+docker_ipv4_cidr: "192.168.0.0/16"
+docker_ipv6_cidr: "2001:db8:1::/64"
+docker_ipv6_enabled: false
 docker_tcp: false
-docker_tcp_tls: "{{ docker_tcp }}"
+
+# Other
+
+docker_edition: 'ce'
+docker_gc_install: true # See https://github.com/spotify/docker-gc
+docker_log_driver: journald # See https://docs.docker.com/engine/admin/logging/overview/
+docker_selinux_enabled: true
 
 ########
 
-docker_edition: 'ce'
+docker_tcp_tls: "{{ docker_tcp }}"
+
 docker_package: "docker-{{ docker_edition }}"
 docker_yum_repo_url: https://download.docker.com/linux/centos/docker-{{ docker_edition }}.repo
 
 # Docker options
 docker_options:
-  - "--dns 8.8.8.8"
   - "--log-driver={{ docker_log_driver }}"
-  - "--disable-legacy-registry"
   - "{% if docker_selinux_enabled %}--selinux-enabled{% endif %}"
 
 # Docker network options can be provided as a list
 docker_network_options:
   - "-H unix:///var/run/docker.sock"
+  - "--fixed-cidr={{ docker_ipv4_cidr }}"
   - "{% if docker_icc_enabled|bool == true %}--icc=true{% else %}--icc=false{% endif %}"
   - "{% if docker_ipv6_enabled %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
   - "{% if docker_tcp %}-H tcp://0.0.0.0:2375{% endif %}"
