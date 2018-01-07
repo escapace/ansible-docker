@@ -1,4 +1,4 @@
-{% if docker_storage_driver in ["btrfs", "overlay"] %}
+{% if docker_storage_driver in ["btrfs", "overlay", "vfs"] %}
 [volume:docker]
 group = {{ volume_group_name }}
 volume = {{ docker_volume_name }}

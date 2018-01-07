@@ -89,7 +89,7 @@
   with_items:
     - rsyslog
     - "{{ docker_package }}"
-    - "{{ docker_package }}-selinux"
+    - "container-selinux"
 
 - name: ensure docker config dir exists
   file:
