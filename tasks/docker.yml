@@ -115,13 +115,9 @@
   service:
     name: docker
     enabled: yes
-    state: started
-  ignore_errors: True
-  register: docker_start
-
-- name: failed to start docker
-  fail: msg="failed to start docker"
-  when: (docker_start|failed and (docker_role_debug|bool == false))
+  notify:
+    - ferm restart
+    - docker restart
 
 - name: install docker-gc
   when: docker_gc_install is defined and docker_gc_install|bool
