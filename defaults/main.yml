@@ -1,7 +1,7 @@
 # Storage options
 
 docker_lvm_data_volume_size: 95%VG
-docker_storage_driver: devicemapper # Possible values: devicemapper (default), overlay or vfs
+docker_storage_driver: devicemapper # Possible values: devicemapper (default), overlay2, overlay or vfs
 docker_volume_name: docker
 docker_volume_group_name: default
 

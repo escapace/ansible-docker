@@ -103,7 +103,18 @@
     dest: /root/.docker/config.json
   register: docker_registry_credentials
 
+- name: systemd drop-in for storage options
+  register: docker_storage_options
+  template:
+    src:  "{{ item }}.j2"
+    dest: "/etc/systemd/system/docker.service.d/{{ item }}"
+  with_items:
+    - 14-storage-options.conf
+  notify:
+    - docker restart
+
 - include_tasks: lvm.yml
+  when: (lvm_physical_device is defined) and (lvm_physical_device | trim != '')
 
 - name: create the docker ferm configuration
   template: src=templates/1003-docker.conf.j2 dest=/etc/ferm/ferm.d/1003-docker.conf owner=root group=root

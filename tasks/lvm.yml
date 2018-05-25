@@ -7,16 +7,6 @@
     dest: /etc/filesystems.d/20-docker-volume.conf
     mode: 0644
 
-- name: systemd drop-in for storage options
-  register: docker_storage_options
-  template:
-    src:  "{{ item }}.j2"
-    dest: "/etc/systemd/system/docker.service.d/{{ item }}"
-  with_items:
-    - 14-storage-options.conf
-  notify:
-    - docker restart
-
 - name: do the storage setup
   shell: "/usr/bin/storage-setup"
   register: docker_storage_setup
