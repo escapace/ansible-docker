@@ -1,2 +1,7 @@
+{% if (lvm_physical_device is defined) and (lvm_physical_device | trim != '') %}
 [Service]
 EnvironmentFile=/etc/sysconfig/docker-storage
+{% else %}
+[Service]
+Environment='STORAGE_OPTIONS=--storage-driver {{ docker_storage_driver }}'
+{% endif %}
