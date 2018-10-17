@@ -86,14 +86,15 @@
   notify:
     - docker restart
 
-- name: install docker packages
-  yum:
-    name: "{{ item }}"
+- name: install docker
+  package:
+    name: "{{ packages }}"
     state: present
-  with_items:
-    - rsyslog
-    - "{{ docker_package }}"
-    - "container-selinux"
+  vars:
+    packages:
+      - rsyslog
+      - "{{ docker_package }}"
+      - "container-selinux"
 
 - name: ensure docker config dir exists
   file:
@@ -135,13 +136,13 @@
     - docker restart
 
 - name: install docker-gc
-  when: docker_gc_install is defined and docker_gc_install|bool
   package:
-    name: '{{ item }}'
+    name: "{{ packages }}"
     state: present
-  with_items:
-    - docker-gc
-    - cronie
+  vars:
+    packages:
+      - docker-gc
+      - cronie
 
 - name: create docker-gc cron job
   template: src=templates/0docker-gc-hourly.cron.j2 dest=/etc/cron.hourly/0docker-gc-hourly.cron owner=root group=root mode=755
