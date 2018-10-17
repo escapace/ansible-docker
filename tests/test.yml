@@ -16,10 +16,8 @@
   tasks:
   - name: install required packages
     yum:
-      name: "{{ item }}"
+      name: "parted"
       state: present
-    with_items:
-      - parted
   - name: create a disk image
     command: dd if=/dev/zero of=/tmp/pv bs=1 count=0 seek=2G
   - name: create a loop device
