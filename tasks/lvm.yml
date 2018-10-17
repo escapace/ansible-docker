@@ -10,11 +10,11 @@
 - name: do the storage setup
   shell: "/usr/bin/storage-setup"
   register: docker_storage_setup
-  when: (docker_storage_options|changed or docker_storage_volume|changed)
+  when: (docker_storage_options is changed or docker_storage_volume is changed)
   changed_when: false
   ignore_errors: True
 
 - name: failed to run storage-setup
   fail: msg="failed to run storage-setup"
-  when: (docker_storage_setup|failed and (docker_role_debug|bool == false))
+  when: (docker_storage_setup is failed and (docker_role_debug|bool == false))
 
