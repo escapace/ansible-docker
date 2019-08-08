@@ -8,9 +8,9 @@
     become: true
   roles:
     - role: provision_docker
-      provision_docker_inventory_group: "{{ groups['test-images'] }}"
+      provision_docker_inventory_group: "{{ groups['test'] }}"
 
-- hosts: test-images
+- hosts: test
   vars:
     lvm_physical_device: /dev/sdz
   tasks:
@@ -38,7 +38,7 @@
   - name: create disk label
     command: /sbin/parted /dev/sdz mklabel gpt
 
-- hosts: test-images
+- hosts: test
   vars:
     lvm_physical_device: /dev/sdz
     ferm_role_debug: true
