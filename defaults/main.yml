@@ -8,7 +8,8 @@ docker_volume_group_name: default
 # Networking
 
 docker_icc_enabled: false
-docker_ipv4_cidr: "192.168.0.0/16"
+docker_ipv4_bip: "192.168.0.1/16"
+docker_ipv4_cidr: "192.168.128.0/17"
 docker_ipv6_cidr: "2001:db8:1::/64"
 docker_ipv6_enabled: false
 docker_tcp: false
@@ -35,8 +36,9 @@ docker_options:
 # Docker network options can be provided as a list
 docker_network_options:
   - "-H unix:///var/run/docker.sock"
+  - "--bip={{ docker_ipv4_bip }}"
   - "--fixed-cidr={{ docker_ipv4_cidr }}"
-  - "{% if docker_icc_enabled|bool == true %}--icc=true{% else %}--icc=false{% endif %}"
+  - "{% if docker_icc_enabled %}--icc=true{% else %}--icc=false{% endif %}"
   - "{% if docker_ipv6_enabled %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
   - "{% if docker_tcp %}-H tcp://0.0.0.0:2375{% endif %}"
   - "{% if docker_tcp and docker_tcp_tls %}--tlsverify{% endif %}"
