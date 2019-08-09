@@ -1,36 +1,52 @@
-domain ip table nat {
-    chain PREROUTING {
-        mod addrtype dst-type LOCAL jump DOCKER;
-    }
+domain ip {
+    table nat {
+        chain DOCKER {
+            interface docker0 RETURN;
+        }
 
-    chain OUTPUT {
-        daddr !127.0.0.0/8 mod addrtype dst-type LOCAL jump DOCKER;
-    }
+        chain PREROUTING {
+            mod addrtype dst-type LOCAL jump DOCKER;
+        }
 
-    chain POSTROUTING {
-        saddr 172.17.0.0/16 outerface !docker0 MASQUERADE;
-    }
+        chain POSTROUTING {
+            saddr {{ docker_ipv4_bip }} outerface !docker0 MASQUERADE;
+        }
 
-    chain DOCKER {
-        interface docker0 jump RETURN;
+        chain OUTPUT {
+            destination !127.0.0.0/8 {
+                mod addrtype dst-type LOCAL jump DOCKER;
+            }
+        }
     }
-
 }
 
 domain (ip ip6) table filter {
-    chain FORWARD { 
-        jump DOCKER-ISOLATION;
+    table filter {
+        chain DOCKER {
+        }
 
-        outerface docker0 jump DOCKER;
+        chain DOCKER-USER {
+            RETURN;
+        }
 
-        outerface docker0 mod conntrack ctstate (ESTABLISHED RELATED) ACCEPT;
-        interface docker0 outerface !docker0 ACCEPT;
-        interface docker0 outerface docker0 DROP;
-    }
+        chain DOCKER-ISOLATION-STAGE-1 {
+            interface docker0 outerface !docker0 jump DOCKER-ISOLATION-STAGE-2;
+            RETURN;
+        }
 
-    chain DOCKER {}
+        chain DOCKER-ISOLATION-STAGE-2 {
+            outerface docker0 DROP;
+            RETURN;
+        }
 
-    chain DOCKER-ISOLATION {
-        RETURN;
+        chain FORWARD {
+            jump DOCKER-USER;
+            jump DOCKER-ISOLATION-STAGE-1;
+            outerface docker0 mod state state (ESTABLISHED RELATED) ACCEPT;
+            outerface docker0 jump DOCKER;
+            interface docker0 outerface !docker0 ACCEPT;
+            interface docker0 outerface docker0 ACCEPT;
+        }
     }
 }
+
