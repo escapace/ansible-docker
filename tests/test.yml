@@ -43,5 +43,6 @@
     lvm_physical_device: /dev/sdz
     ferm_role_debug: true
     docker_role_debug: true
+    dummy_role_debug: true
   roles:
   - role: escapace.docker
