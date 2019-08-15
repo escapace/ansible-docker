@@ -8,11 +8,14 @@ docker_volume_group_name: default
 # Networking
 
 docker_icc_enabled: false
-docker_ipv4_bip: "192.168.0.1/16"
-docker_ipv4_cidr: "192.168.128.0/17"
+docker_ipv4_cidr: "192.168.0.0/16"
+docker_ipv4_bip: "{{ docker_ipv4_cidr | ipaddr('network') | ipmath(1) }}/{{ docker_ipv4_cidr | ipaddr('prefix') }}"
 docker_ipv6_cidr: "2001:db8:1::/64"
 docker_ipv6_enabled: false
 docker_tcp: false
+
+docker_ipv6_dmz: []
+docker_ipv4_dmz: []
 
 # Other
 

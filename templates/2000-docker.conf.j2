@@ -1,0 +1,96 @@
+@def $DOCKER_DEV = docker0;
+
+@def $DOCKER_V4_CIDR = {{ docker_ipv4_bip | ipv4('network') }}/{{ docker_ipv4_bip | ipv4('prefix') }};
+@def $DOCKER_V4_DMZ = ($DUMMY0_V4_CIDR {{ docker_ipv4_dmz | join(' ') }});
+
+domain ip {
+    table nat {
+        chain DOCKER {
+            @preserve;
+
+            interface $DOCKER_DEV RETURN;
+        }
+
+        chain PREROUTING {
+            mod addrtype dst-type LOCAL jump DOCKER;
+        }
+
+        chain POSTROUTING {
+            saddr $DOCKER_V4_CIDR outerface $DEFAULT_V4_DEV MASQUERADE;
+        }
+
+        chain OUTPUT {
+            destination !127.0.0.0/8 {
+                mod addrtype dst-type LOCAL jump DOCKER;
+            }
+        }
+    }
+}
+
+domain ip table filter {
+    chain DOCKER-USER {
+        interface $DOCKER_DEV outerface $DOCKER_DEV RETURN;
+        outerface $DOCKER_DEV interface $DOCKER_DEV RETURN;
+
+        saddr $DOCKER_V4_CIDR interface $DOCKER_DEV outerface $DEFAULT_V4_DEV RETURN;
+        mod state state (ESTABLISHED RELATED) daddr $DOCKER_V4_CIDR outerface $DOCKER_DEV interface $DEFAULT_V4_DEV RETURN;
+
+        saddr $DOCKER_V4_CIDR interface $DOCKER_DEV daddr $DOCKER_V4_DMZ ACCEPT;
+        daddr $DOCKER_V4_CIDR outerface $DOCKER_DEV saddr $DOCKER_V4_DMZ ACCEPT;
+
+        interface $DOCKER_DEV DROP;
+        outerface $DOCKER_DEV DROP;
+        RETURN;
+    }
+}
+
+{% if docker_ipv6_enabled %}
+@def $DOCKER_V6_CIDR = {{ docker_ipv6_cidr }};
+@def $DOCKER_V6_DMZ = ($DUMMY0_V6_CIDR {{ docker_ipv6_dmz | join(' ') }});
+
+domain ip6 table filter {
+    chain DOCKER-USER {
+        interface $DOCKER_DEV outerface $DOCKER_DEV RETURN;
+        outerface $DOCKER_DEV interface $DOCKER_DEV RETURN;
+
+        saddr $DOCKER_V6_CIDR interface $DOCKER_DEV outerface $DEFAULT_V6_DEV RETURN;
+        mod state state (ESTABLISHED RELATED) daddr $DOCKER_V6_CIDR outerface $DOCKER_DEV interface $DEFAULT_V6_DEV RETURN;
+
+        saddr $DOCKER_V6_CIDR interface $DOCKER_DEV daddr $DOCKER_V6_DMZ ACCEPT;
+        daddr $DOCKER_V6_CIDR outerface $DOCKER_DEV saddr $DOCKER_V6_DMZ ACCEPT;
+
+        interface $DOCKER_DEV DROP;
+        outerface $DOCKER_DEV DROP;
+        RETURN;
+    }
+}
+{% endif %}
+
+domain ({{ docker_ipv6_enabled | ternary('ip ip6', 'ip') }}) table filter {
+    chain DOCKER {
+        @preserve;
+    }
+
+
+    chain DOCKER-ISOLATION-STAGE-1 {
+        interface $DOCKER_DEV outerface !docker0 jump DOCKER-ISOLATION-STAGE-2;
+        RETURN;
+    }
+
+    chain DOCKER-ISOLATION-STAGE-2 {
+        outerface $DOCKER_DEV DROP;
+        RETURN;
+    }
+
+    chain FORWARD {
+        jump DOCKER-USER;
+
+        jump DOCKER-ISOLATION-STAGE-1;
+
+        outerface $DOCKER_DEV mod state state (ESTABLISHED RELATED) ACCEPT;
+        outerface $DOCKER_DEV jump DOCKER;
+
+        interface $DOCKER_DEV outerface !docker0 ACCEPT;
+        interface $DOCKER_DEV outerface $DOCKER_DEV {{ docker_icc_enabled | ternary('ACCEPT', 'DROP') }};
+    }
+}

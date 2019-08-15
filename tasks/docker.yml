@@ -122,7 +122,7 @@
   when: (lvm_physical_device is defined) and (lvm_physical_device | trim != '')
 
 - name: create the docker ferm configuration
-  template: src=templates/1003-docker.conf.j2 dest=/etc/ferm/ferm.d/1003-docker.conf owner=root group=root
+  template: src=templates/2000-docker.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root
   notify:
     - ferm restart
     - docker restart

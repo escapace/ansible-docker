@@ -17,5 +17,6 @@ dependencies:
   - { role: escapace.epel }
   - { role: escapace.packagecloud }
   - { role: escapace.ferm }
+  - { role: escapace.dummy }
   - { role: escapace.logrotate }
   - { role: escapace.lvm }
