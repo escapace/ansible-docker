@@ -1,0 +1,6 @@
+exclude_paths:
+  - ./molecule/
+skip_list:
+  - '503'
+  - '403'
+  - '305'
