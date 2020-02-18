@@ -4,11 +4,11 @@
   service:
     name: rsyslog
     state: restarted
-  when: (docker_role_debug|bool == false)
+  when: (not docker_role_debug|bool)
 
 - name: docker restart
   systemd:
     name: docker
     state: restarted
     daemon_reload: yes
-  when: (docker_role_debug|bool == false)
+  when: (not docker_role_debug|bool)

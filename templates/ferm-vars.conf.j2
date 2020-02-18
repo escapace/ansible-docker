@@ -1,0 +1,6 @@
+@def $DOCKER_DEV = docker0;
+@def $DOCKER_V4_CIDR = {{ docker_ipv4_bip | ipv4('network') }}/{{ docker_ipv4_bip | ipv4('prefix') }};
+
+{% if docker_ipv6_enabled %}
+@def $DOCKER_V6_CIDR = {{ docker_ipv6_cidr }};
+{% endif %}

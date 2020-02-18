@@ -1,5 +1,13 @@
 ---
 
+- name: Create /var/lib/docker directory if it does not exist
+  file:
+    path: /var/lib/docker
+    state: directory
+    owner: root
+    group: root
+    mode: '0711'
+
 - name: configure lvm for docker
   register: docker_storage_volume
   template:
@@ -12,9 +20,8 @@
   register: docker_storage_setup
   when: (docker_storage_options is changed or docker_storage_volume is changed)
   changed_when: false
-  ignore_errors: True
+  # ignore_errors: True
 
-- name: failed to run storage-setup
-  fail: msg="failed to run storage-setup"
-  when: (docker_storage_setup is failed and (docker_role_debug|bool == false))
-
+# - name: failed to run storage-setup
+#   fail: msg="failed to run storage-setup"
+#   when: (docker_storage_setup is failed and (not docker_role_debug|bool))

@@ -1,7 +1,7 @@
 # Storage options
 
 docker_lvm_data_volume_size: 95%VG
-docker_storage_driver: devicemapper # Possible values: devicemapper (default), overlay2, overlay or vfs
+docker_storage_driver: overlay2 # Possible values: devicemapper (default), overlay2, overlay or vfs
 docker_volume_name: docker
 docker_volume_group_name: default
 
@@ -10,26 +10,22 @@ docker_volume_group_name: default
 docker_icc_enabled: false
 docker_ipv4_cidr: "192.168.0.0/16"
 docker_ipv4_bip: "{{ docker_ipv4_cidr | ipaddr('network') | ipmath(1) }}/{{ docker_ipv4_cidr | ipaddr('prefix') }}"
-docker_ipv6_cidr: "2001:db8:1::/64"
+docker_ipv6_cidr: "fddd:282c:fadc:66a4::/64"
 docker_ipv6_enabled: false
-docker_tcp: false
-
-docker_ipv6_dmz: []
-docker_ipv4_dmz: []
+docker_userland_proxy: false
 
 # Other
 
 docker_edition: 'ce'
-docker_gc_install: true # See https://github.com/spotify/docker-gc
 docker_log_driver: journald # See https://docs.docker.com/engine/admin/logging/overview/
 docker_selinux_enabled: true
 
 ########
 
-docker_tcp_tls: "{{ docker_tcp }}"
-
 docker_package: "docker-{{ docker_edition }}"
 docker_yum_repo_url: https://download.docker.com/linux/centos/docker-{{ docker_edition }}.repo
+docker_yum_repo_enable_edge: '0'
+docker_yum_repo_enable_test: '0'
 
 # Docker options
 docker_options:
@@ -41,13 +37,11 @@ docker_network_options:
   - "-H unix:///var/run/docker.sock"
   - "--bip={{ docker_ipv4_bip }}"
   - "--fixed-cidr={{ docker_ipv4_cidr }}"
+  - "--userland-proxy={{ docker_userland_proxy | ternary('true', 'false') }}"
+  - "--dns {{ dummy_ipv4_cidr | ipaddr('network') | ipmath(1) }}"
+  - "{% if docker_ipv6_enabled %}--dns {{ dummy_ipv6_cidr | ipaddr('network') | ipmath(1) }}{% endif %}"
   - "{% if docker_icc_enabled %}--icc=true{% else %}--icc=false{% endif %}"
   - "{% if docker_ipv6_enabled %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
-  - "{% if docker_tcp %}-H tcp://0.0.0.0:2375{% endif %}"
-  - "{% if docker_tcp and docker_tcp_tls %}--tlsverify{% endif %}"
-  - "{% if docker_tcp and docker_tcp_tls %}--tlscacert=/etc/pki/CA/ca.cert{%- endif %}"
-  - "{% if docker_tcp and docker_tcp_tls %}--tlscert={{ host_cert }}{%- endif %}"
-  - "{% if docker_tcp and docker_tcp_tls %}--tlskey={{ host_key }}{%- endif %}"
 
 # Just propagate same size that thinprovider use
 docker_volume_size: "{{ docker_lvm_data_volume_size }}"
