@@ -1,0 +1,12 @@
+---
+
+- name: Converge
+  hosts: all
+  vars:
+    ferm_role_debug: true
+    docker_storage_driver: vfs
+    docker_role_debug: true
+    dummy_role_debug: true
+    kresd_role_debug: true
+  roles:
+  - role: escapace.docker
