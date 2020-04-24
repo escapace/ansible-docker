@@ -174,7 +174,6 @@
     group: knot-resolver
     mode: 0640
   loop:
-    - "410-network-docker.conf.j2"
     - "910-view-docker.conf.j2"
   notify:
     - kresd restart
