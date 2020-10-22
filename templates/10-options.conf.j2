@@ -1,4 +1,6 @@
 # /etc/systemd/systemd/docker.service.d/10-options.conf
-[Service]
+[Unit]
 After=ferm.service
+
+[Service]
 Environment='OPTIONS={{ docker_options | join (" ") }}'
