@@ -37,6 +37,7 @@
     section: 'docker-{{ docker_edition }}-edge'
     option: enabled
     value: '{{ docker_yum_repo_enable_edge }}'
+    mode: 0644
 
 - name: Configure Docker Test repo.
   ini_file:
@@ -44,6 +45,7 @@
     section: 'docker-{{ docker_edition }}-test'
     option: enabled
     value: '{{ docker_yum_repo_enable_test }}'
+    mode: 0644
 
 - name: Install containerd separately (CentOS 8).
   package:
@@ -54,10 +56,12 @@
   file:
     dest: /etc/rsyslog.d
     state: directory
+    mode: 0755
 
 - name: create docker entry for syslogd
   copy:
     dest: /etc/rsyslog.d/10-docker.conf
+    mode: 0644
     content: |
       # Docker logging
       :syslogtag, isequal, "docker:"  /var/log/docker/docker.log
@@ -89,6 +93,7 @@
   template:
     src:  "{{ item }}.j2"
     dest: "/etc/systemd/system/docker.service.d/{{ item }}"
+    mode: 0644
   with_items:
     - 10-options.conf
     - 12-network-options.conf
@@ -99,6 +104,7 @@
   copy:
     src: ExecStart.conf
     dest: /etc/systemd/system/docker.service.d/20-ExecStart.conf
+    mode: 0644
   notify:
     - docker restart
 
@@ -116,12 +122,16 @@
   file:
     path: /root/.docker
     state: directory
+    mode: 0755
 
 - name: setup private docker registry credentials
   when: docker_registries is defined and (docker_registries | length > 0)
   template:
     src: config.json.j2
     dest: /root/.docker/config.json
+    owner: root
+    group: root
+    mode: 0600
   register: docker_registry_credentials
 
 - name: systemd drop-in for storage options
@@ -129,6 +139,7 @@
   template:
     src:  "{{ item }}.j2"
     dest: "/etc/systemd/system/docker.service.d/{{ item }}"
+    mode: 0644
   with_items:
     - 14-storage-options.conf
   notify:
@@ -138,13 +149,13 @@
   when: (lvm_physical_device is defined) and (lvm_physical_device | length > 0)
 
 - name: create the docker ferm configuration
-  template: src=templates/ferm.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root
+  template: src=templates/ferm.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root mode=0644
   notify:
     - ferm restart
     - docker restart
 
 - name: create the docker ferm variables
-  template: src=templates/ferm-vars.conf.j2 dest=/etc/ferm/vars.d/2000-docker.conf owner=root group=root
+  template: src=templates/ferm-vars.conf.j2 dest=/etc/ferm/vars.d/2000-docker.conf owner=root group=root mode=0644
   notify:
     - ferm restart
     - docker restart
