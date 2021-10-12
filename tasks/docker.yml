@@ -52,23 +52,6 @@
     name: https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
     state: present
 
-- name: create rsyslog.d
-  file:
-    dest: /etc/rsyslog.d
-    state: directory
-    mode: 0755
-
-- name: create docker entry for syslogd
-  copy:
-    dest: /etc/rsyslog.d/10-docker.conf
-    mode: 0644
-    content: |
-      # Docker logging
-      :syslogtag, isequal, "docker:"  /var/log/docker/docker.log
-      & ~
-  notify:
-    - docker-rsyslog restart
-
 - name: copy docker logrotate configurations
   copy:
     src: "docker.logrotate"
@@ -114,7 +97,6 @@
     state: present
   vars:
     packages:
-      - rsyslog
       - "{{ docker_package }}"
       - "container-selinux"
 

@@ -1,11 +1,5 @@
 ---
 
-- name: docker-rsyslog restart
-  service:
-    name: rsyslog
-    state: restarted
-  when: (not docker_role_debug|bool)
-
 - name: docker restart
   systemd:
     name: docker
