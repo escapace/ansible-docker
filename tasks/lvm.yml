@@ -1,6 +1,6 @@
 ---
 
-- name: Create /var/lib/docker directory if it does not exist
+- name: /var/lib/docker directory
   file:
     path: /var/lib/docker
     state: directory
@@ -8,17 +8,17 @@
     group: root
     mode: '0711'
 
-- name: configure lvm for docker
-  register: docker_storage_volume
+- name: docker storage configuration
+  register: storage_setup_docker_configuration
   template:
-    src: docker-volume.conf.j2
-    dest: /etc/filesystems.d/20-docker-volume.conf
+    src: storage-setup-docker.conf.j2
+    dest: /etc/filesystems.d/20-docker.conf
     mode: 0644
 
-- name: do the storage setup
+- name: storage setup
   shell: "/usr/bin/storage-setup"
-  register: docker_storage_setup
-  when: (docker_storage_options is changed or docker_storage_volume is changed)
+  # register: docker_storage_setup
+  when: storage_setup_docker_configuration is changed
   changed_when: false
   # ignore_errors: True
 
