@@ -1,11 +1,15 @@
-# Storage options
+docker_edition: 'ce'
+docker_log_driver: journald # https://docs.docker.com/engine/admin/logging/overview/
+docker_selinux_enabled: true
+
+# storage
 
 docker_lvm_data_volume_size: 95%VG
 docker_storage_driver: overlay2 # Possible values: devicemapper (default), overlay2, overlay or vfs
 docker_volume_name: docker
 docker_volume_group_name: default
 
-# Networking
+# networking
 
 docker_icc_enabled: false
 docker_ipv4_cidr: "192.168.0.0/16"
@@ -14,39 +18,6 @@ docker_ipv6_cidr: "fddd:282c:fadc:66a4::/64"
 docker_ipv6_enabled: false
 docker_userland_proxy: false
 
-# Other
-
-docker_edition: 'ce'
-docker_log_driver: journald # See https://docs.docker.com/engine/admin/logging/overview/
-docker_selinux_enabled: true
-
-########
-
-docker_package: "docker-{{ docker_edition }}"
-docker_yum_repo_url: https://download.docker.com/linux/centos/docker-{{ docker_edition }}.repo
-docker_yum_repo_enable_edge: '0'
-docker_yum_repo_enable_test: '0'
-
-# Docker options
-docker_options:
-  - "--log-driver={{ docker_log_driver }}"
-  - "{% if docker_selinux_enabled %}--selinux-enabled{% endif %}"
-
-# Docker network options can be provided as a list
-docker_network_options:
-  - "-H unix:///var/run/docker.sock"
-  - "--bip={{ docker_ipv4_bip }}"
-  - "--fixed-cidr={{ docker_ipv4_cidr }}"
-  - "--userland-proxy={{ docker_userland_proxy | ternary('true', 'false') }}"
-  - "--dns {{ dummy_ipv4_cidr | ipaddr('network') | ipmath(1) }}"
-  - "{% if docker_ipv6_enabled %}--dns {{ dummy_ipv6_cidr | ipaddr('network') | ipmath(1) }}{% endif %}"
-  - "{% if docker_icc_enabled %}--icc=true{% else %}--icc=false{% endif %}"
-  - "{% if docker_ipv6_enabled %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
-
-# Just propagate same size that thinprovider use
-docker_volume_size: "{{ docker_lvm_data_volume_size }}"
-docker_volume_mount: /var/lib/docker
-docker_volume_device: "/dev/{{ volume_group_name }}/{{ docker_volume_name }}"
-docker_volume_fs_type: "xfs"
+# testing
 
 docker_role_debug: false
