@@ -4,8 +4,8 @@ docker_selinux_enabled: true
 
 # storage
 
-docker_lvm_data_volume_size: 95%VG
-docker_storage_driver: overlay2 # Possible values: devicemapper (default), overlay2, overlay or vfs
+docker_volume_size: 95%VG
+docker_storage_driver: overlay2 # Possible values: overlay2 or vfs
 docker_volume_name: docker
 docker_volume_group_name: default
 
