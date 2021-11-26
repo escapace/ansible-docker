@@ -8,6 +8,11 @@
       - docker-engine
     state: absent
 
+- name: install cronie
+  package:
+    name: cronie
+    state: latest
+
 - name: Add Docker GPG key.
   rpm_key:
     key: https://download.docker.com/linux/centos/gpg
