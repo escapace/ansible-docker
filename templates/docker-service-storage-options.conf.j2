@@ -1,4 +1,4 @@
-{% if (lvm_physical_device is defined) and (lvm_physical_device | trim != '') %}
+{% if (storage_setup_physical_device is defined) and (storage_setup_physical_device | trim != '') %}
 [Service]
 EnvironmentFile=/etc/sysconfig/docker-storage
 {% else %}

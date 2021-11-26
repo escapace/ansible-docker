@@ -1,4 +1,10 @@
 ---
 
+- name: check docker storage driver
+  assert:
+    that:
+      - docker_storage_driver is "overlay2" or docker_storage_driver is "vfs"
+    quiet: true
+
 - include_tasks: docker.yml
   when: ansible_os_family == "RedHat"

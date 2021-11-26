@@ -1,15 +1,5 @@
 ---
 
-- name: install docker dependencies
-  package:
-    name: "{{ packages }}"
-    state: latest
-  vars:
-    packages:
-      - device-mapper-persistent-data
-      - lvm2
-      - cronie
-
 - name: Ensure old versions of Docker are not installed.
   package:
     name:
@@ -101,8 +91,8 @@
     state: directory
     mode: 0755
 
-- include_tasks: lvm.yml
-  when: (lvm_physical_device is defined) and (lvm_physical_device | length > 0)
+- include_tasks: storage-setup.yml
+  when: (storage_setup_physical_device is defined) and (storage_setup_physical_device | length > 0)
 
 - name: create the docker ferm configuration
   template: src=templates/ferm-docker.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root mode=0644

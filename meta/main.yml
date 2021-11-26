@@ -20,7 +20,7 @@ galaxy_info:
 dependencies:
   - { role: escapace.epel }
   - { role: escapace.ferm }
-  - { role: escapace.dummy }
   - { role: escapace.kresd }
+  - { role: escapace.dummy }
   - { role: escapace.logrotate }
-  - { role: escapace.lvm }
+  - { role: escapace.storage_setup }
