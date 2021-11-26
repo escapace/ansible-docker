@@ -3,7 +3,7 @@
 - name: check docker storage driver
   assert:
     that:
-      - docker_storage_driver is "overlay2" or docker_storage_driver is "vfs"
+      - docker_storage_driver == "overlay2" or docker_storage_driver == "vfs"
     quiet: true
 
 - include_tasks: docker.yml
