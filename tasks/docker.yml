@@ -47,20 +47,6 @@
 #     name: https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
 #     state: present
 
-- name: docker logrotate configurations
-  template:
-    src: "logrotate-docker.j2"
-    dest: "/etc/logrotate.d/docker"
-    mode: 0644
-    owner: root
-    group: root
-
-- name: create docker log archive
-  file:
-    path: "/var/log/docker/archive"
-    mode: 0755
-    state: directory
-
 - name: create directory for systemd drop-ins
   file:
     path: /etc/systemd/system/docker.service.d

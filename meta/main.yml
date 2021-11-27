@@ -22,5 +22,4 @@ dependencies:
   - { role: escapace.ferm }
   - { role: escapace.kresd }
   - { role: escapace.dummy }
-  - { role: escapace.logrotate }
   - { role: escapace.storage_setup }
