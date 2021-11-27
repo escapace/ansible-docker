@@ -63,8 +63,6 @@
     - { src: 'docker-service-network-options.conf.j2', dest: '015-network-options.conf' }
     - { src: 'docker-service-storage-options.conf.j2', dest: '020-storage-options.conf' }
     - { src: 'docker-service-exec-start.conf.j2', dest: '080-exec-start.conf' }
-  notify:
-    - docker restart
 
 - name: install docker
   package:
@@ -87,23 +85,14 @@
 
 - name: create the docker ferm configuration
   template: src=templates/ferm-docker.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root mode=0644
-  notify:
-    - ferm restart
-    - docker restart
 
 - name: create the docker ferm variables
   template: src=templates/ferm-docker-variables.conf.j2 dest=/etc/ferm/vars.d/2000-docker.conf owner=root group=root mode=0644
-  notify:
-    - ferm restart
-    - docker restart
 
 - name: enable docker
   service:
     name: docker
     enabled: yes
-  notify:
-    - ferm restart
-    - docker restart
 
 - name: create docker-system-prune cron job
   cron:
@@ -123,5 +112,3 @@
     mode: 0640
   loop:
     - { src: 'kresd-docker-view.conf.j2', dest: '910-view-docker.conf' }
-  notify:
-    - kresd restart
