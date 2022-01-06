@@ -1,4 +1,4 @@
-net.listen('{{ docker_ipv4_address }}', 53, { kind = 'dns' })
+net.listen('{{ docker_ipv4_address }}', 53, { kind = 'dns', freebind = true })
 
 {% if docker_ipv6_enabled %}
 net.listen('{{ docker_ipv6_address }}', 53, { kind = 'dns', freebind = true })
