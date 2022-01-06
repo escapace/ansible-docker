@@ -7,15 +7,13 @@ docker_selinux_enabled: true
 docker_volume_size: 95%VG
 docker_storage_driver: overlay2 # Possible values: overlay2 or vfs
 docker_volume_name: docker
-docker_volume_group_name: default
 
 # networking
 
-docker_icc_enabled: false
 docker_ipv4_cidr: "192.168.0.0/16"
-docker_ipv4_bip: "{{ docker_ipv4_cidr | ipaddr('network') | ipmath(1) }}/{{ docker_ipv4_cidr | ipaddr('prefix') }}"
 docker_ipv6_cidr: "fddd:282c:fadc:66a4::/64"
-docker_ipv6_enabled: false
+docker_icc_enabled: true
+docker_ipv6_enabled: true
 docker_userland_proxy: false
 
 # testing

@@ -9,19 +9,7 @@
     mode: '0711'
 
 - name: docker storage configuration
-  register: storage_setup_docker_configuration
   template:
     src: storage-setup-docker.conf.j2
     dest: /etc/filesystems.d/20-docker.conf
     mode: 0644
-
-# - name: storage setup
-#   shell: "/usr/bin/storage-setup"
-#   # register: docker_storage_setup
-#   when: storage_setup_docker_configuration is changed
-#   changed_when: false
-#   # ignore_errors: True
-
-# - name: failed to run storage-setup
-#   fail: msg="failed to run storage-setup"
-#   when: (docker_storage_setup is failed and (not docker_role_debug|bool))

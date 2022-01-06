@@ -1,5 +1,6 @@
 [Unit]
 After=ferm.service
+Wants=ferm.service
 
 [Service]
 Environment='OPTIONS={{ docker_options | join (" ") }}'
