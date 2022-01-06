@@ -9,18 +9,23 @@ docker_options:
   - "--log-driver={{ docker_log_driver }}"
   - "{% if docker_selinux_enabled %}--selinux-enabled{% endif %}"
 
+docker_ipv4_prefix: "{{ docker_ipv4_cidr | ipaddr('prefix') }}"
+docker_ipv6_prefix: "{{ docker_ipv6_cidr | ipaddr('prefix') }}"
+docker_ipv4_address: "{{ docker_ipv4_cidr | ipaddr('network') | ipmath(1) }}"
+docker_ipv6_address: "{{ docker_ipv6_cidr | ipaddr('network') | ipmath(1) }}"
+
 # network options
 docker_network_options:
   - "-H unix:///var/run/docker.sock"
-  - "--bip={{ docker_ipv4_bip }}"
-  - "--fixed-cidr={{ docker_ipv4_cidr }}"
   - "--userland-proxy={{ docker_userland_proxy | ternary('true', 'false') }}"
-  - "--dns {{ dummy_ipv4_cidr | ipaddr('network') | ipmath(1) }}"
-  - "{% if docker_ipv6_enabled %}--dns {{ dummy_ipv6_cidr | ipaddr('network') | ipmath(1) }}{% endif %}"
   - "{% if docker_icc_enabled %}--icc=true{% else %}--icc=false{% endif %}"
+  - "--fixed-cidr={{ docker_ipv4_cidr }}"
+  - "--bip={{ docker_ipv4_address }}/{{ docker_ipv4_prefix }}"
+  - "--dns {{ docker_ipv4_address }}"
   - "{% if docker_ipv6_enabled %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
+  - "{% if docker_ipv6_enabled %}--dns {{ docker_ipv6_address }}{% endif %}"
 
 # just propagate same size that thinprovider use
 docker_volume_mount: /var/lib/docker
-docker_volume_device: "/dev/{{ volume_group_name }}/{{ docker_volume_name }}"
+docker_volume_device: "/dev/{{ storage_setup_volume_group_name }}/{{ docker_volume_name }}"
 docker_volume_fs_type: "xfs"

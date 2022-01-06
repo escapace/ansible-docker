@@ -1,2 +1,4 @@
 view:addr('{{ docker_ipv4_cidr }}', policy.all(policy.PASS))
+{% if docker_ipv6_enabled %}
 view:addr('{{ docker_ipv6_cidr }}', policy.all(policy.PASS))
+{% endif %}

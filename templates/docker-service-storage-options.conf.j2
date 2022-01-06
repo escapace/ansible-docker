@@ -1,7 +1,8 @@
 {% if (storage_setup_physical_device is defined) and (storage_setup_physical_device | trim != '') %}
-[Service]
-EnvironmentFile=/etc/sysconfig/docker-storage
-{% else %}
+[Unit]
+After=storage-setup.service
+Requires=storage-setup.service
+{% endif %}
+
 [Service]
 Environment='STORAGE_OPTIONS=--storage-driver {{ docker_storage_driver }}'
-{% endif %}
