@@ -21,8 +21,10 @@ docker_network_options:
   - "{% if docker_icc_enabled %}--icc=true{% else %}--icc=false{% endif %}"
   - "--fixed-cidr={{ docker_ipv4_cidr }}"
   - "--bip={{ docker_ipv4_address }}/{{ docker_ipv4_prefix }}"
-  - "--dns {{ docker_ipv4_address }}"
   - "{% if docker_ipv6_enabled %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
+
+docker_dns_options:
+  - "--dns {{ docker_ipv4_address }}"
   - "{% if docker_ipv6_enabled %}--dns {{ docker_ipv6_address }}{% endif %}"
 
 # just propagate same size that thinprovider use

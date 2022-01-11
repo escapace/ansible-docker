@@ -3,4 +3,4 @@ After=ferm.service
 Wants=ferm.service
 
 [Service]
-Environment='OPTIONS={{ docker_options | join (" ") }}'
+Environment='DOCKER_GENERAL_OPTIONS={{ docker_options | join (" ") }}'
