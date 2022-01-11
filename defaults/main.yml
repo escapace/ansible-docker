@@ -1,5 +1,6 @@
 docker_edition: 'ce'
-docker_log_driver: journald # https://docs.docker.com/engine/admin/logging/overview/
+# https://docs.docker.com/engine/admin/logging/overview/
+docker_log_driver: journald
 docker_selinux_enabled: true
 
 # storage

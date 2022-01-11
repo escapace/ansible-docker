@@ -1,0 +1,13 @@
+domain ip table filter {
+  chain INPUT {
+    daddr $DOCKER_V4_ADDRESS saddr $DOCKER_V4_CIDR proto (udp tcp) dport 53 ACCEPT;
+  }
+}
+
+{% if docker_ipv6_enabled %}
+domain ip6 table filter {
+  chain INPUT {
+    daddr $DOCKER_V6_ADDRESS saddr $DOCKER_V6_CIDR proto (udp tcp) dport 53 ACCEPT;
+  }
+}
+{% endif %}
