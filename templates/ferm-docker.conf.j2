@@ -1,14 +1,14 @@
-{% if provider is defined and provider == "ec2" %}
+{% if provider is defined and provider == "ec2" and not docker_metadata_enabled %}
 domain ip table filter {
   chain FORWARD {
-    interface $DOCKER_DEV daddr 169.254.169.254 proto tcp DROP;
+    saddr $DOCKER_V4_CIDR interface $DOCKER_DEV daddr 169.254.169.254 proto tcp DROP;
   }
 }
 
 {% if docker_ipv6_enabled %}
 domain ip6 table filter {
   chain FORWARD {
-    interface $DOCKER_DEV daddr fd00:ec2::254 proto tcp DROP;
+    saddr $DOCKER_V6_CIDR interface $DOCKER_DEV daddr fd00:ec2::254 proto tcp DROP;
   }
 }
 {% endif %}
@@ -16,7 +16,9 @@ domain ip6 table filter {
 
 domain ip {
   table filter {
-    chain (DOCKER DOCKER-ISOLATION-STAGE-1 DOCKER-ISOLATION-STAGE-2) @preserve;
+    chain (DOCKER DOCKER-ISOLATION-STAGE-1 DOCKER-ISOLATION-STAGE-2) {
+      NOP;
+    }
 
     chain FORWARD {
       # -A FORWARD -j DOCKER-USER
@@ -24,13 +26,13 @@ domain ip {
       # -A FORWARD -j DOCKER-ISOLATION-STAGE-1
       jump DOCKER-ISOLATION-STAGE-1;
 
-      # -A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+      # -A FORWARD -o $DOCKER_DEV -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
       outerface $DOCKER_DEV mod state state (ESTABLISHED RELATED) ACCEPT;
-      # -A FORWARD -o docker0 -j DOCKER
+      # -A FORWARD -o $DOCKER_DEV -j DOCKER
       outerface $DOCKER_DEV jump DOCKER;
-      # -A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+      # -A FORWARD -i $DOCKER_DEV ! -o $DOCKER_DEV -j ACCEPT
       interface $DOCKER_DEV outerface ! $DOCKER_DEV ACCEPT;
-      # -A FORWARD -i docker0 -o docker0 -j ACCEPT
+      # -A FORWARD -i $DOCKER_DEV -o $DOCKER_DEV -j ACCEPT
       interface $DOCKER_DEV outerface $DOCKER_DEV {{ docker_icc_enabled | ternary('ACCEPT', 'DROP') }};
     }
 
@@ -40,22 +42,29 @@ domain ip {
     }
 
     # chain DOCKER-ISOLATION-STAGE-1 {
-    #   # -A DOCKER-ISOLATION-STAGE-1 -i docker0 ! -o docker0 -j
+    #   # -A DOCKER-ISOLATION-STAGE-1 -i $DOCKER_DEV ! -o $DOCKER_DEV -j
     #   interface $DOCKER_DEV outerface ! $DOCKER_DEV jump DOCKER-ISOLATION-STAGE-2;
     #   # -A DOCKER-ISOLATION-STAGE-1 -j RETURN
     #   RETURN;
     # }
     #
     # chain DOCKER-ISOLATION-STAGE-2 {
-    #   # -A DOCKER-ISOLATION-STAGE-2 -o docker0 -j DROP
+    #   # -A DOCKER-ISOLATION-STAGE-2 -o $DOCKER_DEV -j DROP
     #   outerface $DOCKER_DEV DROP;
     #   # -A DOCKER-ISOLATION-STAGE-2 -j RETURN
     #   RETURN;
     # }
   }
 
+
   table nat {
-    chain DOCKER @preserve;
+    chain DOCKER {
+      NOP;
+    }
+
+    chain DOCKER-POSTROUTING-USER {
+      NOP;
+    }
 
     chain PREROUTING {
       # -A PREROUTING -m addrtype --dst-type LOCAL -j DOCKER
@@ -63,10 +72,10 @@ domain ip {
     }
 
     chain POSTROUTING {
-      # -A POSTROUTING -o docker0 -m addrtype --src-type LOCAL -j MASQUERADE
-      outerface $DOCKER_DEV mod addrtype dst-type LOCAL MASQUERADE;
+      # -A POSTROUTING -o $DOCKER_DEV -m addrtype --src-type LOCAL -j MASQUERADE
+      outerface $DOCKER_DEV mod addrtype src-type LOCAL MASQUERADE;
 
-      # -A POSTROUTING -s 192.168.0.0/16 ! -o docker0 -j MASQUERADE
+      # -A POSTROUTING -s 192.168.0.0/16 ! -o $DOCKER_DEV -j MASQUERADE
       saddr $DOCKER_V4_CIDR outerface ! $DOCKER_DEV MASQUERADE;
     }
 
@@ -80,21 +89,25 @@ domain ip {
 {% if docker_ipv6_enabled %}
 domain ip6 table filter {
   chain FORWARD {
-    # -A FORWARD -o docker0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    # -A FORWARD -o $DOCKER_DEV -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
     outerface $DOCKER_DEV mod state state (ESTABLISHED RELATED) ACCEPT;
-    # -A FORWARD -i docker0 ! -o docker0 -j ACCEPT
+    # -A FORWARD -i $DOCKER_DEV ! -o $DOCKER_DEV -j ACCEPT
     interface $DOCKER_DEV outerface ! $DOCKER_DEV ACCEPT;
-    # -A FORWARD -i docker0 -o docker0 -j ACCEPT
+    # -A FORWARD -i $DOCKER_DEV -o $DOCKER_DEV -j ACCEPT
     interface $DOCKER_DEV outerface $DOCKER_DEV {{ docker_icc_enabled | ternary('ACCEPT', 'DROP') }};
   }
 }
 
 domain ip6 table nat {
-  chain POSTROUTING {
-    # -A POSTROUTING -o docker0 -m addrtype --src-type LOCAL -j MASQUERADE
-    outerface $DOCKER_DEV mod addrtype dst-type LOCAL MASQUERADE;
+  chain DOCKER-POSTROUTING-USER {
+    NOP;
+  }
 
-    # -A POSTROUTING -s 192.168.0.0/16 ! -o docker0 -j MASQUERADE
+  chain POSTROUTING {
+    # -A POSTROUTING -o $DOCKER_DEV -m addrtype --src-type LOCAL -j MASQUERADE
+    outerface $DOCKER_DEV mod addrtype src-type LOCAL MASQUERADE;
+
+    # -A POSTROUTING -s 192.168.0.0/16 ! -o $DOCKER_DEV -j MASQUERADE
     saddr $DOCKER_V6_CIDR outerface ! $DOCKER_DEV MASQUERADE;
   }
 }

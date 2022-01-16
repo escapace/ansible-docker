@@ -1,5 +1,9 @@
 ---
 
+- name: import escapace.storage_setup role
+  import_role:
+    name: escapace.storage_setup
+
 - name: /var/lib/docker directory
   file:
     path: /var/lib/docker

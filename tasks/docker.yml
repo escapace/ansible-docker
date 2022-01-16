@@ -63,6 +63,7 @@
     - { src: 'docker-service-storage-options.conf.j2', dest: '020-storage-options.conf' }
     - { src: 'docker-service-network-options.conf.j2', dest: '030-network-options.conf' }
     - { src: 'docker-service-dns-options.conf.j2', dest: '040-dns-options.conf' }
+    - { src: 'docker-service-iptables-fix.conf.j2', dest: '090-iptables-fix.conf' }
     - { src: 'docker-service-exec-start.conf.j2', dest: '090-exec-start.conf' }
 
 - name: install docker
@@ -86,12 +87,18 @@
 
 - name: create the docker ferm configuration
   template: src=templates/ferm-docker.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root mode=0600
+  tags:
+  - ferm-conf
 
 - name: create the docker dns ferm configuration
   template: src=templates/ferm-docker-dns.conf.j2 dest=/etc/ferm/ferm.d/2000-docker-dns.conf owner=root group=root mode=0600
+  tags:
+  - ferm-conf
 
 - name: create the docker ferm variables
   template: src=templates/ferm-docker-variables.conf.j2 dest=/etc/ferm/vars.d/2000-docker.conf owner=root group=root mode=0600
+  tags:
+  - ferm-conf
 
 - name: enable docker
   service:
@@ -117,3 +124,5 @@
   loop:
     - { src: 'kresd-docker-network.conf.j2', dest: '410-network-docker.conf' }
     - { src: 'kresd-docker-view.conf.j2', dest: '910-view-docker.conf' }
+  tags:
+  - kresd-conf

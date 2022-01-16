@@ -16,6 +16,7 @@ docker_ipv6_cidr: "fddd:282c:fadc:66a4::/64"
 docker_icc_enabled: true
 docker_ipv6_enabled: true
 docker_userland_proxy: false
+docker_metadata_enabled: true
 
 # testing
 
