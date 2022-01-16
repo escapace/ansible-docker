@@ -21,4 +21,3 @@ dependencies:
   - { role: escapace.epel }
   - { role: escapace.ferm }
   - { role: escapace.kresd }
-  - { role: escapace.storage_setup }

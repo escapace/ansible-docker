@@ -2,7 +2,11 @@
 @def $DOCKER_V4_CIDR = {{ docker_ipv4_cidr }};
 @def $DOCKER_V4_ADDRESS = {{ docker_ipv4_address }};
 
+@def $DOCKER_V6_ENABLED = {{ docker_ipv6_enabled | ternary('1', '0') }};
+
 {% if docker_ipv6_enabled %}
 @def $DOCKER_V6_CIDR = {{ docker_ipv6_cidr }};
 @def $DOCKER_V6_ADDRESS = {{ docker_ipv6_address }};
 {% endif %}
+
+@def $DOCKER_METADATA_ENABLED = {{ docker_metadata_enabled | ternary('1', '0') }};

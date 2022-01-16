@@ -1,0 +1,5 @@
+[Service]
+ExecStartPost=bash -c "iptables -t nat -N DOCKER-POSTROUTING-USER || true \
+  && iptables -t nat -I POSTROUTING -j DOCKER-POSTROUTING-USER || true \
+  && ip6tables -t nat -N DOCKER-POSTROUTING-USER || true \
+  && ip6tables -t nat -I POSTROUTING -j DOCKER-POSTROUTING-USER || true &> /dev/null"
