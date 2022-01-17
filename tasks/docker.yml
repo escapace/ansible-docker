@@ -133,5 +133,3 @@
     - { src: 'kresd-docker-view.conf.j2', dest: '910-view-docker.conf' }
   tags:
   - kresd-conf
-
-
