@@ -81,7 +81,7 @@
     name: container_manage_cgroup
     state: true
     persistent: true
-  when: docker_selinux_enabled | bool and docker_selinux_container_cgroup | bool
+  when: docker_selinux_enabled | bool and docker_selinux_container_cgroup | bool and not docker_role_debug | bool
 
 - name: ensure docker config dir exists
   file:
