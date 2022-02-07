@@ -1,0 +1,6 @@
+[Unit]
+Description=Remove all unused containers, networks, and images.
+
+[Service]
+Type=oneshot
+ExecStart=docker system prune -af
