@@ -8,20 +8,23 @@
       - docker-engine
     state: absent
 
-- name: install cronie
-  package:
-    name: cronie
-    state: latest
+# - name: add docker gpg key
+#   rpm_key:
+#     key: https://download.docker.com/linux/centos/gpg
+#     state: present
 
-- name: add docker gpg key
-  rpm_key:
-    key: https://download.docker.com/linux/centos/gpg
-    state: present
+# - name: add docker repository.
+#   get_url:
+#     url: "{{ docker_yum_repo_url }}"
+#     dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
+#     owner: root
+#     group: root
+#     mode: 0644
 
-- name: add docker repository.
-  get_url:
-    url: "{{ docker_yum_repo_url }}"
-    dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
+- name: docker repo
+  template:
+    src: docker-ce.repo.j2
+    dest: "/etc/yum.repos.d/docker-ce.repo"
     owner: root
     group: root
     mode: 0644
@@ -52,6 +55,8 @@
     path: /etc/systemd/system/docker.service.d
     state: directory
     mode: 0755
+  notify:
+    - docker daemon-reload
 
 - name: systemd drop-in for options
   template:
@@ -65,6 +70,8 @@
     - { src: 'docker-service-dns-options.conf.j2', dest: '040-dns-options.conf' }
     - { src: 'docker-service-iptables-fix.conf.j2', dest: '090-iptables-fix.conf' }
     - { src: 'docker-service-exec-start.conf.j2', dest: '090-exec-start.conf' }
+  notify:
+    - docker daemon-reload
 
 - name: install docker
   package:
@@ -107,19 +114,26 @@
   tags:
   - ferm-conf
 
+- name: docker-system-prune
+  template:
+    src:  "{{ item.src }}"
+    dest: "/usr/lib/systemd/system/{{ item.dest }}"
+    mode: 0644
+  loop:
+    - { src: 'docker-system-prune.service.j2', dest: 'docker-system-prune.service' }
+    - { src: 'docker-system-prune.timer.j2', dest: 'docker-system-prune.timer' }
+  notify:
+    - docker daemon-reload
+
 - name: enable docker
   service:
     name: docker
     enabled: yes
 
-- name: create docker-system-prune cron job
-  cron:
-    name: "docker-system-prune"
-    minute: "0"
-    hour: "*/8"
-    job: "docker system prune -af > /dev/null 2>&1"
-    user: "root"
-    cron_file: "docker-system-prune"
+- name: enable docker-system-prune.timer
+  service:
+    name: docker-system-prune.timer
+    enabled: yes
 
 - name: docker kresd configuration
   template:
