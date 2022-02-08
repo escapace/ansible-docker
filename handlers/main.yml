@@ -2,5 +2,5 @@
 
 - name: docker daemon-reload
   systemd:
-    daemon_reload: yes
-  when: not docker_role_debug
+    daemon_reload: true
+  when: not docker_role_debug|bool

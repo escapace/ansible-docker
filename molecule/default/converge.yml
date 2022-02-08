@@ -9,4 +9,4 @@
     dummy_role_debug: true
     kresd_role_debug: true
   roles:
-  - role: escapace.docker
+    - role: escapace.docker

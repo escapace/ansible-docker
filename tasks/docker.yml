@@ -102,17 +102,17 @@
 - name: create the docker ferm configuration
   template: src=templates/ferm-docker.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root mode=0600
   tags:
-  - ferm-conf
+    - ferm-conf
 
 - name: create the docker dns ferm configuration
   template: src=templates/ferm-docker-dns.conf.j2 dest=/etc/ferm/ferm.d/2000-docker-dns.conf owner=root group=root mode=0600
   tags:
-  - ferm-conf
+    - ferm-conf
 
 - name: create the docker ferm variables
   template: src=templates/ferm-docker-variables.conf.j2 dest=/etc/ferm/vars.d/2000-docker.conf owner=root group=root mode=0600
   tags:
-  - ferm-conf
+    - ferm-conf
 
 - name: docker-system-prune
   template:
@@ -128,12 +128,14 @@
 - name: enable docker
   service:
     name: docker
-    enabled: yes
+    enabled: true
+  when: not docker_role_debug|bool
 
 - name: enable docker-system-prune.timer
   service:
     name: docker-system-prune.timer
-    enabled: yes
+    enabled: true
+  when: not docker_role_debug|bool
 
 - name: docker kresd configuration
   template:
@@ -146,4 +148,4 @@
     - { src: 'kresd-docker-network.conf.j2', dest: '410-network-docker.conf' }
     - { src: 'kresd-docker-view.conf.j2', dest: '910-view-docker.conf' }
   tags:
-  - kresd-conf
+    - kresd-conf
