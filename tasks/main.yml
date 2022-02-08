@@ -9,5 +9,5 @@
 - include_tasks: docker.yml
   when: ansible_os_family == "RedHat"
   tags:
-  - ferm-conf
-  - kresd-conf
+    - ferm-conf
+    - kresd-conf
