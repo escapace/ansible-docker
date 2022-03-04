@@ -1,11 +1,11 @@
-{% if provider is defined and provider == "ec2" and not docker_metadata_enabled %}
+{% if provider is defined and provider == "ec2" and not docker_metadata %}
 domain ip table filter {
   chain FORWARD {
     saddr $DOCKER_V4_CIDR interface $DOCKER_DEV daddr 169.254.169.254 proto tcp DROP;
   }
 }
 
-{% if docker_ipv6_enabled %}
+{% if docker_ipv6 %}
 domain ip6 table filter {
   chain FORWARD {
     saddr $DOCKER_V6_CIDR interface $DOCKER_DEV daddr fd00:ec2::254 proto tcp DROP;
@@ -33,7 +33,7 @@ domain ip {
       # -A FORWARD -i $DOCKER_DEV ! -o $DOCKER_DEV -j ACCEPT
       interface $DOCKER_DEV outerface ! $DOCKER_DEV ACCEPT;
       # -A FORWARD -i $DOCKER_DEV -o $DOCKER_DEV -j ACCEPT
-      interface $DOCKER_DEV outerface $DOCKER_DEV {{ docker_icc_enabled | ternary('ACCEPT', 'DROP') }};
+      interface $DOCKER_DEV outerface $DOCKER_DEV {{ docker_icc | ternary('ACCEPT', 'DROP') }};
     }
 
     chain DOCKER-USER {
@@ -86,7 +86,7 @@ domain ip {
   }
 }
 
-{% if docker_ipv6_enabled %}
+{% if docker_ipv6 %}
 domain ip6 table filter {
   chain FORWARD {
     # -A FORWARD -o $DOCKER_DEV -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
@@ -94,7 +94,7 @@ domain ip6 table filter {
     # -A FORWARD -i $DOCKER_DEV ! -o $DOCKER_DEV -j ACCEPT
     interface $DOCKER_DEV outerface ! $DOCKER_DEV ACCEPT;
     # -A FORWARD -i $DOCKER_DEV -o $DOCKER_DEV -j ACCEPT
-    interface $DOCKER_DEV outerface $DOCKER_DEV {{ docker_icc_enabled | ternary('ACCEPT', 'DROP') }};
+    interface $DOCKER_DEV outerface $DOCKER_DEV {{ docker_icc | ternary('ACCEPT', 'DROP') }};
   }
 }
 
