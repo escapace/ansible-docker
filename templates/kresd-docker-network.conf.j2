@@ -1,5 +1,5 @@
 net.listen('{{ docker_ipv4_address }}', 53, { kind = 'dns', freebind = true })
 
-{% if docker_ipv6_enabled %}
+{% if docker_ipv6 %}
 net.listen('{{ docker_ipv6_address }}', 53, { kind = 'dns', freebind = true })
 {% endif %}

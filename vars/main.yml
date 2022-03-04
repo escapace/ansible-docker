@@ -7,7 +7,7 @@ docker_yum_repo_url: https://download.docker.com/linux/centos/docker-{{ docker_e
 
 docker_options:
   - "--log-driver={{ docker_log_driver }}"
-  - "{% if docker_selinux_enabled %}--selinux-enabled{% endif %}"
+  - "{% if docker_selinux %}--selinux-enabled{% endif %}"
 
 docker_ipv4_prefix: "{{ docker_ipv4_cidr | ipaddr('prefix') }}"
 docker_ipv6_prefix: "{{ docker_ipv6_cidr | ipaddr('prefix') }}"
@@ -18,14 +18,14 @@ docker_ipv6_address: "{{ docker_ipv6_cidr | ipaddr('network') | ipmath(1) }}"
 docker_network_options:
   - "-H unix:///var/run/docker.sock"
   - "--userland-proxy={{ docker_userland_proxy | ternary('true', 'false') }}"
-  - "{% if docker_icc_enabled %}--icc=true{% else %}--icc=false{% endif %}"
+  - "{% if docker_icc %}--icc=true{% else %}--icc=false{% endif %}"
   - "--fixed-cidr={{ docker_ipv4_cidr }}"
   - "--bip={{ docker_ipv4_address }}/{{ docker_ipv4_prefix }}"
-  - "{% if docker_ipv6_enabled %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
+  - "{% if docker_ipv6 %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
 
 docker_dns_options:
   - "--dns {{ docker_ipv4_address }}"
-  - "{% if docker_ipv6_enabled %}--dns {{ docker_ipv6_address }}{% endif %}"
+  - "{% if docker_ipv6 %}--dns {{ docker_ipv6_address }}{% endif %}"
 
 # just propagate same size that thinprovider use
 docker_volume_mount: /var/lib/docker

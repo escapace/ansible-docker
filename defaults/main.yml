@@ -3,7 +3,7 @@
 docker_edition: 'ce'
 # https://docs.docker.com/engine/admin/logging/overview/
 docker_log_driver: journald
-docker_selinux_enabled: true
+docker_selinux: true
 docker_selinux_container_cgroup: true
 
 # storage
@@ -17,10 +17,10 @@ docker_volume_name: docker
 
 docker_ipv4_cidr: "192.168.0.0/16"
 docker_ipv6_cidr: "fddd:282c:fadc:66a4::/64"
-docker_icc_enabled: true
-docker_ipv6_enabled: true
+docker_icc: true
+docker_ipv6: true
 docker_userland_proxy: false
-docker_metadata_enabled: true
+docker_metadata: true
 
 # testing
 
