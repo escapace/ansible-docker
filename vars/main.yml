@@ -9,10 +9,10 @@ docker_options:
   - "--log-driver={{ docker_log_driver }}"
   - "{% if docker_selinux %}--selinux-enabled{% endif %}"
 
-docker_ipv4_prefix: "{{ docker_ipv4_cidr | ipaddr('prefix') }}"
-docker_ipv6_prefix: "{{ docker_ipv6_cidr | ipaddr('prefix') }}"
-docker_ipv4_address: "{{ docker_ipv4_cidr | ipaddr('network') | ipmath(1) }}"
-docker_ipv6_address: "{{ docker_ipv6_cidr | ipaddr('network') | ipmath(1) }}"
+docker_ipv4_prefix: "{{ docker_ipv4_cidr | ansible.utils.ipaddr('prefix') }}"
+docker_ipv6_prefix: "{{ docker_ipv6_cidr | ansible.utils.ipaddr('prefix') }}"
+docker_ipv4_address: "{{ docker_ipv4_cidr | ansible.utils.ipaddr('network') | ansible.utils.ipmath(1) }}"
+docker_ipv6_address: "{{ docker_ipv6_cidr | ansible.utils.ipaddr('network') | ansible.utils.ipmath(1) }}"
 
 # network options
 docker_network_options:
