@@ -1,7 +1,7 @@
 ---
 
 - name: check docker storage driver
-  assert:
+  ansible.builtin.assert:
     that:
       - docker_storage_driver == "overlay2" or docker_storage_driver == "vfs"
     quiet: true

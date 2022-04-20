@@ -1,6 +1,6 @@
 ---
 
 - name: docker daemon-reload
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: true
   when: not docker_role_debug|bool
