@@ -83,6 +83,16 @@
       - 'docker-{{ docker_edition }}-cli'
       - containerd.io
 
+- name: fix docker.socket service
+  ansible.builtin.lineinfile:
+    path: "/usr/lib/systemd/system/docker.socket"
+    regexp: '^ListenStream='
+    line: "ListenStream=/run/docker.sock"
+    insertafter: '^[Socket]'
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: alow containers to manage cgroup
   ansible.posix.seboolean:
     name: container_manage_cgroup
