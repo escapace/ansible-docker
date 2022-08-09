@@ -14,13 +14,9 @@ docker_storage_driver: overlay2
 docker_volume_name: docker
 
 # networking
-
-docker_ipv4_cidr: "192.168.0.0/16"
-docker_ipv6_cidr: "fddd:282c:fadc:66a4::/64"
-docker_icc: true
-docker_ipv6: true
+#
+docker_iptables: false
 docker_userland_proxy: false
-docker_metadata: true
 
 # testing
 
