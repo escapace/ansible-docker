@@ -8,19 +8,6 @@
       - docker-engine
     state: absent
 
-# - name: add docker gpg key
-#   rpm_key:
-#     key: https://download.docker.com/linux/centos/gpg
-#     state: present
-
-# - name: add docker repository.
-#   get_url:
-#     url: "{{ docker_yum_repo_url }}"
-#     dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-#     owner: root
-#     group: root
-#     mode: 0644
-
 - name: docker repo
   ansible.builtin.template:
     src: docker-ce.repo.j2
@@ -28,27 +15,6 @@
     owner: root
     group: root
     mode: 0644
-
-# - name: Configure Docker Edge repo.
-#   ini_file:
-#     dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-#     section: 'docker-{{ docker_edition }}-edge'
-#     option: enabled
-#     value: '{{ docker_yum_repo_enable_edge }}'
-#     mode: 0644
-#
-# - name: Configure Docker Test repo.
-#   ini_file:
-#     dest: '/etc/yum.repos.d/docker-{{ docker_edition }}.repo'
-#     section: 'docker-{{ docker_edition }}-test'
-#     option: enabled
-#     value: '{{ docker_yum_repo_enable_test }}'
-#     mode: 0644
-
-# - name: Install containerd separately (CentOS 8).
-#   package:
-#     name: https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm
-#     state: present
 
 - name: create directory for systemd drop-ins
   ansible.builtin.file:
@@ -67,8 +33,6 @@
     - { src: 'docker-service-general-options.conf.j2', dest: '010-general-options.conf' }
     - { src: 'docker-service-storage-options.conf.j2', dest: '020-storage-options.conf' }
     - { src: 'docker-service-network-options.conf.j2', dest: '030-network-options.conf' }
-    - { src: 'docker-service-dns-options.conf.j2', dest: '040-dns-options.conf' }
-    - { src: 'docker-service-iptables-fix.conf.j2', dest: '090-iptables-fix.conf' }
     - { src: 'docker-service-exec-start.conf.j2', dest: '090-exec-start.conf' }
   notify:
     - docker daemon-reload
@@ -109,21 +73,6 @@
 - include_tasks: storage-setup.yml
   when: (storage_setup_physical_device is defined) and (storage_setup_physical_device | length > 0) and (docker_storage_driver == "overlay2")
 
-- name: create the docker ferm configuration
-  ansible.builtin.template: src=templates/ferm-docker.conf.j2 dest=/etc/ferm/ferm.d/2000-docker.conf owner=root group=root mode=0600
-  tags:
-    - ferm-conf
-
-- name: create the docker dns ferm configuration
-  ansible.builtin.template: src=templates/ferm-docker-dns.conf.j2 dest=/etc/ferm/ferm.d/2000-docker-dns.conf owner=root group=root mode=0600
-  tags:
-    - ferm-conf
-
-- name: create the docker ferm variables
-  ansible.builtin.template: src=templates/ferm-docker-variables.conf.j2 dest=/etc/ferm/vars.d/2000-docker.conf owner=root group=root mode=0600
-  tags:
-    - ferm-conf
-
 - name: docker-system-prune
   ansible.builtin.template:
     src:  "{{ item.src }}"
@@ -146,16 +95,3 @@
     name: docker-system-prune.timer
     enabled: true
   when: not docker_role_debug|bool
-
-- name: docker kresd configuration
-  ansible.builtin.template:
-    src: "{{ item.src }}"
-    dest: "/etc/knot-resolver/kresd.conf.d/{{ item.dest }}"
-    owner: root
-    group: knot-resolver
-    mode: 0640
-  loop:
-    - { src: 'kresd-docker-network.conf.j2', dest: '410-network-docker.conf' }
-    - { src: 'kresd-docker-view.conf.j2', dest: '910-view-docker.conf' }
-  tags:
-    - kresd-conf

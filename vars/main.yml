@@ -2,32 +2,17 @@
 
 docker_package: "docker-{{ docker_edition }}"
 docker_yum_repo_url: https://download.docker.com/linux/centos/docker-{{ docker_edition }}.repo
-# docker_yum_repo_enable_edge: '0'
-# docker_yum_repo_enable_test: '0'
 
 docker_options:
   - "--log-driver={{ docker_log_driver }}"
   - "{% if docker_selinux %}--selinux-enabled{% endif %}"
 
-docker_ipv4_prefix: "{{ docker_ipv4_cidr | ansible.utils.ipaddr('prefix') }}"
-docker_ipv6_prefix: "{{ docker_ipv6_cidr | ansible.utils.ipaddr('prefix') }}"
-docker_ipv4_address: "{{ docker_ipv4_cidr | ansible.utils.ipaddr('network') | ansible.utils.ipmath(1) }}"
-docker_ipv6_address: "{{ docker_ipv6_cidr | ansible.utils.ipaddr('network') | ansible.utils.ipmath(1) }}"
-
-# network options
 docker_network_options:
   - "-H unix:///var/run/docker.sock"
+  - "--bridge=none"
   - "--userland-proxy={{ docker_userland_proxy | ternary('true', 'false') }}"
-  - "{% if docker_icc %}--icc=true{% else %}--icc=false{% endif %}"
-  - "--fixed-cidr={{ docker_ipv4_cidr }}"
-  - "--bip={{ docker_ipv4_address }}/{{ docker_ipv4_prefix }}"
-  - "{% if docker_ipv6 %}--ipv6 --fixed-cidr-v6={{ docker_ipv6_cidr }}{% endif %}"
+  - "--iptables={{ docker_iptables | ternary('true', 'false') }}"
 
-docker_dns_options:
-  - "--dns {{ docker_ipv4_address }}"
-  - "{% if docker_ipv6 %}--dns {{ docker_ipv6_address }}{% endif %}"
-
-# just propagate same size that thinprovider use
 docker_volume_mount: /var/lib/docker
 docker_volume_device: "/dev/{{ storage_setup_volume_group_name }}/{{ docker_volume_name }}"
 docker_volume_fs_type: "xfs"
