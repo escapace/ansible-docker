@@ -37,7 +37,6 @@
   notify:
     - docker daemon-reload
 
-# TODO: https://github.com/containerd/containerd/issues/7219
 - name: install docker
   ansible.builtin.package:
     name: "{{ packages }}"
@@ -46,7 +45,9 @@
     packages:
       - 'docker-{{ docker_edition }}'
       - 'docker-{{ docker_edition }}-cli'
-      - containerd.io-1.6.6
+      # - containerd.io-1.6.6
+
+# https://github.com/containerd/containerd/issues/7219
 
 - name: fix docker.socket service
   ansible.builtin.lineinfile:
