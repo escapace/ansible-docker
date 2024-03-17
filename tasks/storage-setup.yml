@@ -1,5 +1,4 @@
 ---
-
 - name: import escapace.storage_setup role
   ansible.builtin.import_role:
     name: escapace.storage_setup
@@ -10,10 +9,10 @@
     state: directory
     owner: root
     group: root
-    mode: '0711'
+    mode: "0711"
 
 - name: docker storage configuration
   ansible.builtin.template:
     src: storage-setup-docker.conf.j2
     dest: /etc/filesystems.d/20-docker.conf
-    mode: 0644
+    mode: "0644"

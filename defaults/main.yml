@@ -1,6 +1,6 @@
 ---
 
-docker_edition: 'ce'
+docker_edition: ce
 # https://docs.docker.com/engine/admin/logging/overview/
 docker_log_driver: journald
 docker_selinux: true
