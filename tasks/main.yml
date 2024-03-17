@@ -1,5 +1,4 @@
 ---
-
 - name: check docker storage driver
   ansible.builtin.assert:
     that:

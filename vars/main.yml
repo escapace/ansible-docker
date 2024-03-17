@@ -1,18 +1,18 @@
 ---
 
-docker_package: "docker-{{ docker_edition }}"
+docker_package: docker-{{ docker_edition }}
 docker_yum_repo_url: https://download.docker.com/linux/centos/docker-{{ docker_edition }}.repo
 
 docker_options:
-  - "--log-driver={{ docker_log_driver }}"
+  - --log-driver={{ docker_log_driver }}
   - "{% if docker_selinux %}--selinux-enabled{% endif %}"
 
 docker_network_options:
-  - "-H unix:///var/run/docker.sock"
-  - "--bridge=none"
-  - "--userland-proxy={{ docker_userland_proxy | ternary('true', 'false') }}"
-  - "--iptables={{ docker_iptables | ternary('true', 'false') }}"
+  - -H unix:///var/run/docker.sock
+  - --bridge=none
+  - --userland-proxy={{ docker_userland_proxy | ternary('true', 'false') }}
+  - --iptables={{ docker_iptables | ternary('true', 'false') }}
 
 docker_volume_mount: /var/lib/docker
-docker_volume_device: "/dev/{{ storage_setup_volume_group_name }}/{{ docker_volume_name }}"
-docker_volume_fs_type: "xfs"
+docker_volume_device: /dev/{{ storage_setup_volume_group_name }}/{{ docker_volume_name }}
+docker_volume_fs_type: xfs
