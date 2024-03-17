@@ -29,9 +29,18 @@
     dest: /etc/systemd/system/docker.service.d/{{ item.dest }}
     mode: "0644"
   loop:
-    - { src: docker-service-general-options.conf.j2, dest: "010-general-options.conf" }
-    - { src: docker-service-storage-options.conf.j2, dest: "020-storage-options.conf" }
-    - { src: docker-service-network-options.conf.j2, dest: "030-network-options.conf" }
+    - {
+        src: docker-service-general-options.conf.j2,
+        dest: "010-general-options.conf",
+      }
+    - {
+        src: docker-service-storage-options.conf.j2,
+        dest: "020-storage-options.conf",
+      }
+    - {
+        src: docker-service-network-options.conf.j2,
+        dest: "030-network-options.conf",
+      }
     - { src: docker-service-exec-start.conf.j2, dest: "090-exec-start.conf" }
   notify:
     - docker daemon-reload
