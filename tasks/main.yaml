@@ -5,7 +5,7 @@
       - docker_storage_driver == "overlay2" or docker_storage_driver == "vfs"
     quiet: true
 
-- ansible.builtin.include_tasks: docker.yml
+- ansible.builtin.include_tasks: docker.yaml
   when: ansible_os_family == "RedHat"
   tags:
     - ferm-conf
