@@ -4,7 +4,7 @@ docker_yum_repo_url: https://download.docker.com/linux/centos/docker-{{ docker_e
 
 docker_options:
   - --log-driver={{ docker_log_driver }}
-  - "{% if docker_selinux %}--selinux-enabled{% endif %}"
+  - '{% if docker_selinux %}--selinux-enabled{% endif %}'
 
 docker_network_options:
   - -H unix:///var/run/docker.sock
