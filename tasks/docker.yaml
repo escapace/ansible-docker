@@ -58,11 +58,9 @@
     group: root
     mode: "0644"
 
-- name: alow containers to manage cgroup
-  ansible.posix.seboolean:
-    name: container_manage_cgroup
-    state: true
-    persistent: true
+- name: allow containers to manage cgroup
+  ansible.builtin.shell: setsebool -P container_manage_cgroup true
+  changed_when: false
   when: docker_selinux | bool and docker_selinux_container_cgroup | bool and not docker_role_debug | bool
 
 - name: ensure docker config dir exists
