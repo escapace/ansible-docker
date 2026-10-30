@@ -1,0 +1,7 @@
+-- Managed by escapace.docker; only the bridge DNS destinations are admitted.
+assert(type(view.rule_dst) == 'function', 'docker dns requires view.rule_dst')
+{% for address in docker_kresd_addresses %}
+net.listen('{{ address }}', 53, { freebind = true })
+view:addr('{{ '::/0' if ':' in address else '0.0.0.0/0' }}',
+    view.rule_dst(policy.PASS, '{{ address }}/{{ 128 if ':' in address else 32 }}'))
+{% endfor %}

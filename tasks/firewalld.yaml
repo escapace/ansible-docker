@@ -1,0 +1,47 @@
+---
+- name: discover the optional firewalld policy directory
+  ansible.builtin.stat:
+    path: /etc/firewalld/policies
+  register: docker_firewalld_policy_directory
+
+- name: inspect the installed firewalld validator
+  ansible.builtin.stat:
+    path: /usr/bin/firewall-offline-cmd
+  register: docker_firewalld_validator
+  when: docker_firewalld_available
+
+- name: require the validator for the discovered firewalld installation
+  ansible.builtin.assert:
+    that: docker_firewalld_validator.stat.executable | default(false)
+    fail_msg: the firewalld policy directory exists but firewall-offline-cmd is unavailable
+  when: docker_firewalld_available
+
+- name: prepare the discovered docker firewall integration
+  when: docker_firewalld_available
+  block:
+    - name: prepare the docker zone definition directory
+      ansible.builtin.file:
+        path: /etc/firewalld/zones
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: inspect existing standard docker zone definitions
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/firewalld/zones/docker.xml
+        - /usr/lib/firewalld/zones/docker.xml
+      register: docker_firewalld_zone_files
+
+    - name: bootstrap the standard docker zone only when absent
+      ansible.builtin.copy:
+        src: docker-zone.xml
+        dest: /etc/firewalld/zones/docker.xml
+        force: false
+        owner: root
+        group: root
+        mode: "0644"
+      when: not (docker_firewalld_zone_files.results | selectattr('stat.exists') | list | length > 0)
+      notify: docker reload firewalld

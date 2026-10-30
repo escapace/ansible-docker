@@ -1,0 +1,38 @@
+---
+argument_specs:
+  main:
+    short_description: configure rootful docker on el10 without starting inactive services
+    options:
+      docker_users:
+        type: list
+        elements: str
+        default: []
+        description: existing usernames to add to the docker group without removing other memberships
+      docker_tailscale_integration:
+        type: bool
+        default: false
+        description: opt in to docker forwarding through a discovered tailscale firewalld zone
+      docker_build_cache_min_free_space:
+        type: str
+        default: "10GB"
+        description: positive binary byte-size target for filesystem free space reclaimed from build cache
+      docker_dangling_image_prune_after:
+        type: str
+        default: "168h"
+        description: positive whole-hour age cutoff for daily dangling image cleanup; empty disables it
+      docker_storage_device:
+        type: str
+        default: ""
+        description: non-empty absolute /dev/ block-device path enables dedicated storage; empty skips configuration
+      docker_storage_volume_group:
+        type: str
+        default: docker
+        description: volume group owned by the docker storage configuration
+      docker_bridge_ipv4:
+        type: str
+        default: 172.17.0.1/16
+        description: private ipv4 gateway and prefix for the default bridge
+      docker_bridge_ipv6_subnet:
+        type: raw
+        default: fd3b:7a4e:6b20:1::/64
+        description: canonical private ipv6 /64 outside tailscale; false or an empty string disables default bridge ipv6

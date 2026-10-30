@@ -1,0 +1,41 @@
+---
+- name: discover the optional tailscale firewalld zone
+  ansible.builtin.stat:
+    path: /etc/firewalld/zones/tailscale.xml
+  register: docker_tailscale_zone
+
+- name: require a regular discovered tailscale zone configuration
+  ansible.builtin.assert:
+    that: not docker_tailscale_zone.stat.exists or (docker_tailscale_zone.stat.isreg | default(false))
+    fail_msg: the discovered tailscale firewalld zone must be a regular configuration file
+  when:
+    - docker_tailscale_integration
+    - docker_firewalld_available
+
+- name: inspect the owned tailscale forwarding policy without following links
+  ansible.builtin.stat:
+    path: "{{ docker_tailscale_policy_path }}"
+    follow: false
+  register: docker_tailscale_policy
+
+- name: reject nonregular tailscale forwarding policy destinations
+  ansible.builtin.assert:
+    that: not docker_tailscale_policy.stat.exists or (docker_tailscale_policy.stat.isreg | default(false))
+    fail_msg: refusing a nonregular docker tailscale forwarding policy destination
+
+- name: allow docker forwarding through the discovered tailscale zone
+  ansible.builtin.copy:
+    src: docker-tailscale.xml
+    dest: "{{ docker_tailscale_policy_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: docker_tailscale_managed
+  notify: docker reload firewalld
+
+- name: remove the disabled or unavailable docker tailscale forwarding integration
+  ansible.builtin.file:
+    path: "{{ docker_tailscale_policy_path }}"
+    state: absent
+  when: not docker_tailscale_managed
+  notify: docker reload firewalld

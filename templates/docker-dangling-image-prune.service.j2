@@ -1,0 +1,13 @@
+[Unit]
+Description=Prune old dangling Docker images
+After=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+User=root
+# Disabled cleanup and an inactive daemon both skip without socket activation.
+ExecCondition=/usr/bin/test -n "{{ docker_dangling_image_prune_after }}"
+ExecCondition=/usr/bin/systemctl --quiet is-active docker.service
+UnsetEnvironment=DOCKER_CONTEXT DOCKER_HOST DOCKER_TLS DOCKER_TLS_VERIFY DOCKER_CERT_PATH
+ExecStart=/usr/bin/docker --host=unix:///run/docker.sock image prune --force --filter=until={{ docker_dangling_image_prune_after }}

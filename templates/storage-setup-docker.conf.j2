@@ -1,13 +1,17 @@
+[group:docker]
+name = {{ docker_storage_volume_group }}
+devices = {{ docker_storage_device }}
+
 [volume:docker]
-group = {{ storage_setup_volume_group_name }}
-volume = {{ docker_volume_name }}
-size = {{ docker_volume_size }}
+group = {{ docker_storage_volume_group }}
+volume = docker
+size = 100%FREE
 
 [filesystem:docker]
 dev = {{ docker_volume_device }}
-fstype = {{ docker_volume_fs_type }}
-mount = {{ docker_volume_mount }}
-required_by = storage-setup.service docker.service
+fstype = xfs
+mount = /var/lib/docker
+required_by = docker.service containerd.service
 user = root
 group = root
-mode = 711
+mode = {{ docker_root_mode }}

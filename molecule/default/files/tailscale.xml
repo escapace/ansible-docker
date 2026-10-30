@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone target="DROP">
+  <interface name="tailscale0"/>
+</zone>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policy target="CONTINUE" priority="{{ item.priority }}">
+  <ingress-zone name="{{ item.ingress }}" />
+  <egress-zone name="HOST" />
+{% for address in docker_kresd_addresses %}
+  <rule family="{{ 'ipv6' if ':' in address else 'ipv4' }}">
+    <destination address="{{ address }}/{{ 128 if ':' in address else 32 }}" />
+    <service name="dns" />
+    <{{ item.action }} />
+  </rule>
+{% endfor %}
+</policy>

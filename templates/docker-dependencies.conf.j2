@@ -1,0 +1,8 @@
+[Unit]
+{% if docker_firewalld_available %}
+Requires=firewalld.service
+{% endif %}
+After={{ 'firewalld.service ' if docker_firewalld_available else '' }}systemd-sysctl.service
+{% if docker_dns_managed %}
+After=knot-resolver.service
+{% endif %}

@@ -1,18 +1,106 @@
 ---
-- name: import escapace.storage_setup role
-  ansible.builtin.import_role:
+- name: inspect existing docker storage configuration
+  ansible.builtin.stat:
+    path: /etc/storage-setup.d/20-docker.conf
+  register: docker_storage_configuration
+
+- name: read an existing storage mapping
+  ansible.builtin.slurp:
+    src: /etc/storage-setup.d/20-docker.conf
+  register: docker_previous_storage
+  when: docker_storage_configuration.stat.exists
+
+- name: refuse to change an existing storage device mapping
+  ansible.builtin.assert:
+    that:
+      - >-
+        ('dev = ' ~ docker_volume_device ~ '\n') in
+        (docker_previous_storage.content | b64decode)
+    fail_msg: migrate existing docker storage separately before changing its volume group
+  when: docker_storage_configuration.stat.exists
+
+- name: inspect container data directories before storage initialization
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /var/lib/docker
+    - /var/lib/containerd
+  register: docker_previous_directories
+  when: not docker_storage_configuration.stat.exists
+
+- name: inspect existing data without modifying it
+  ansible.builtin.find:
+    paths: "{{ item.item }}"
+    hidden: true
+    recurse: false
+    file_type: any
+  loop: "{{ docker_previous_directories.results | default([]) }}"
+  when:
+    - not docker_storage_configuration.stat.exists
+    - item.stat.isdir | default(false)
+  register: docker_previous_data
+
+- name: refuse implicit migration of existing container data
+  ansible.builtin.assert:
+    that: item.matched == 0
+    fail_msg: dedicated storage requires empty docker and containerd directories; migrate data separately
+  loop: "{{ docker_previous_data.results | default([]) }}"
+  when: item.matched is defined
+
+- name: install provisioning machinery for the configured dedicated storage
+  ansible.builtin.include_role:
     name: escapace.storage_setup
 
-- name: /var/lib/docker directory
+- name: create the docker mount point without mounting it
   ansible.builtin.file:
     path: /var/lib/docker
     state: directory
     owner: root
     group: root
-    mode: "0711"
+    mode: "{{ docker_root_mode }}"
 
-- name: docker storage configuration
+- name: configure the docker volume group and shared xfs filesystem
   ansible.builtin.template:
     src: storage-setup-docker.conf.j2
-    dest: /etc/filesystems.d/20-docker.conf
+    dest: /etc/storage-setup.d/20-docker.conf
+    owner: root
+    group: root
     mode: "0644"
+
+- name: configure containerd on the shared docker filesystem
+  ansible.builtin.lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: '^root\s*='
+    line: 'root = "/var/lib/docker/containerd"'
+    insertbefore: BOF
+    firstmatch: true
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/bin/containerd --config %s config dump
+  when: docker_daemon_binary.stat.executable | default(false)
+  notify:
+    - docker restart containerd
+    - docker restart daemon
+
+- name: create storage dependency drop-in directories
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item }}.service.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: [docker, containerd]
+
+- name: require the shared filesystem before either daemon starts
+  ansible.builtin.template:
+    src: storage-dependency.conf.j2
+    dest: "/etc/systemd/system/{{ item }}.service.d/20-docker-storage.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  loop: [containerd, docker]
+  notify:
+    - docker daemon-reload
+    - docker restart containerd
+    - docker restart daemon

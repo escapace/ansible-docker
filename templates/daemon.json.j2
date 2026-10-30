@@ -1,0 +1,16 @@
+{{ {
+  'bip': docker_bridge_ipv4,
+  'ipv6': docker_bridge_has_ipv6,
+  'firewall-backend': 'nftables',
+  'selinux-enabled': true,
+  'log-driver': 'journald',
+  'builder': {
+    'gc': {
+      'enabled': true,
+      'defaultReservedSpace': '0B',
+      'defaultMinFreeSpace': docker_build_cache_min_free_space_bytes | string
+    }
+  }
+} | combine({'fixed-cidr-v6': docker_bridge_ipv6_subnet} if docker_bridge_has_ipv6 else {})
+  | combine({'bip6': docker_bridge_ipv6_gateway_cidr} if docker_dns_managed and docker_bridge_has_ipv6 else {})
+  | combine({'dns': docker_kresd_addresses} if docker_dns_managed else {}) | to_nice_json }}

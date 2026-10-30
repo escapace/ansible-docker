@@ -1,10 +1,16 @@
 ---
-- name: Converge
+- name: converge
   hosts: all
-  vars:
-    ferm_role_debug: true
-    docker_storage_driver: vfs
-    docker_role_debug: true
-    kresd_role_debug: true
+  pre_tasks:
+    - name: install image preparation and native firewall test prerequisites
+      ansible.builtin.package:
+        name:
+          - systemd
+          - systemd-udev
+          - firewalld
+        state: present
+
+    - name: prepare native optional integration fixtures without starting services
+      ansible.builtin.import_tasks: tasks/fixtures.yaml
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"

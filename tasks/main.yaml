@@ -1,12 +1,117 @@
 ---
-- name: check docker storage driver
+- name: validate platform and input types
   ansible.builtin.assert:
     that:
-      - docker_storage_driver == "overlay2" or docker_storage_driver == "vfs"
-    quiet: true
+      - ansible_facts.get('os_family') == 'RedHat'
+      - ansible_facts.get('distribution_major_version') == '10'
+      - docker_users is sequence
+      - docker_users is not string
+      - docker_users is not mapping
+      - docker_tailscale_integration is boolean
+      - docker_build_cache_min_free_space is string
+      - docker_dangling_image_prune_after is string
+      - docker_storage_device is string
+      - docker_storage_volume_group is string
+      - docker_bridge_ipv4 is string
+      - >-
+        docker_bridge_ipv6_subnet is undefined or
+        docker_bridge_ipv6_subnet is string or
+        docker_bridge_ipv6_subnet is sameas false
+    fail_msg: docker requires gathered el10 facts, systemd, and correctly typed inputs
 
-- ansible.builtin.include_tasks: docker.yaml
-  when: ansible_os_family == "RedHat"
-  tags:
-    - ferm-conf
-    - kresd-conf
+- name: validate the build cache free space size format
+  ansible.builtin.assert:
+    that:
+      - docker_build_cache_min_free_space == docker_build_cache_min_free_space | trim
+      - docker_build_cache_min_free_space | upper is match('^[0-9]+([.][0-9]+)?(B|KB|MB|GB|TB)$')
+    fail_msg: supply a byte-size string with b, kb, mb, gb, or tb units for build cache free space
+
+# Zero would restore Docker's inferred cache ceiling with the other GC thresholds unset.
+- name: validate the build cache free space target in bytes
+  ansible.builtin.assert:
+    that:
+      - docker_build_cache_min_free_space_bytes > 0
+      - docker_build_cache_min_free_space_bytes <= 9223372036854775807
+    fail_msg: build cache free space must be positive and fit a signed 64-bit byte count
+
+- name: validate the enabled dangling image age cutoff
+  ansible.builtin.assert:
+    that:
+      - docker_dangling_image_prune_after == docker_dangling_image_prune_after | trim
+      - docker_dangling_image_prune_after is match('^[1-9][0-9]*h$')
+      - (docker_dangling_image_prune_after[:-1] | int) <= 2562047
+    fail_msg: supply a whole-hour duration from 1h to 2562047h, or an empty string to disable dangling image cleanup
+  when: docker_dangling_image_prune_after | length > 0
+
+- name: validate docker usernames
+  ansible.builtin.assert:
+    that:
+      - item is string
+      - item | length > 0
+      - item == item | trim
+      - not item.startswith('-')
+    fail_msg: docker_users must contain non-empty usernames without surrounding whitespace or a leading hyphen
+  loop: "{{ docker_users }}"
+
+- name: validate default bridge addresses
+  ansible.builtin.assert:
+    that:
+      - (docker_bridge_ipv4 | ansible.utils.ipv4('address')) not in [false, none]
+      - "'/' in docker_bridge_ipv4"
+      - >-
+        (docker_bridge_ipv4 | ansible.utils.ipaddr('10.0.0.0/8')) not in [false, none] or
+        (docker_bridge_ipv4 | ansible.utils.ipaddr('172.16.0.0/12')) not in [false, none] or
+        (docker_bridge_ipv4 | ansible.utils.ipaddr('192.168.0.0/16')) not in [false, none]
+      - docker_bridge_ipv4_address != (docker_bridge_ipv4 | ansible.utils.ipaddr('network'))
+      - docker_bridge_ipv4_address != (docker_bridge_ipv4 | ansible.utils.ipaddr('broadcast'))
+    fail_msg: supply a private ipv4 bridge gateway and prefix
+
+- name: validate the enabled ipv6 bridge subnet
+  ansible.builtin.assert:
+    that:
+      - (docker_bridge_ipv6_subnet | ansible.utils.ipv6('network/prefix')) == docker_bridge_ipv6_subnet
+      - (docker_bridge_ipv6_subnet | ansible.utils.ipaddr('prefix')) == 64
+      - (docker_bridge_ipv6_subnet | ansible.utils.ipaddr('fd00::/8')) not in [false, none]
+      - (docker_bridge_ipv6_subnet | ansible.utils.ipaddr('fd7a:115c:a1e0::/48')) in [false, none]
+    fail_msg: supply a canonical ula /64 outside tailscale when bridge ipv6 is enabled
+  when: docker_bridge_has_ipv6
+
+- name: validate the enabled dedicated storage declaration
+  ansible.builtin.assert:
+    that:
+      - docker_storage_device == docker_storage_device | trim
+      - docker_storage_device is match('^/dev/[a-zA-Z0-9_./:+-]+$')
+      - "'//' not in docker_storage_device"
+      - not docker_storage_device.endswith('/')
+      - docker_storage_device is not search('(^|/)[.]{1,2}(/|$)')
+      - docker_storage_volume_group == docker_storage_volume_group | trim
+      - docker_storage_volume_group is match('^[a-zA-Z0-9+_.][a-zA-Z0-9+_.-]{0,127}$')
+      - docker_storage_volume_group not in ['.', '..']
+    fail_msg: supply one normalized /dev/ device path and a valid lvm volume group name for dedicated docker storage
+  when: docker_storage_device | length > 0
+
+- name: prepare optional firewalld integration
+  ansible.builtin.import_tasks: firewalld.yaml
+
+- name: prepare optional knot resolver integration
+  ansible.builtin.import_tasks: dns.yaml
+
+- name: prepare optional tailscale forwarding integration
+  ansible.builtin.import_tasks: tailscale.yaml
+
+- name: install docker packages
+  ansible.builtin.import_tasks: install.yaml
+
+- name: configure docker users
+  ansible.builtin.import_tasks: users.yaml
+  when: docker_users | length > 0
+
+- name: configure optional dedicated storage
+  ansible.builtin.include_tasks: storage-setup.yaml
+  when: docker_storage_device | length > 0
+
+- name: configure docker
+  ansible.builtin.import_tasks: docker.yaml
+
+- name: configure native dangling image cleanup
+  ansible.builtin.import_tasks: image-prune.yaml

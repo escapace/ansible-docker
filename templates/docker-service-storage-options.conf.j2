@@ -1,8 +1,0 @@
-{% if (storage_setup_physical_device is defined) and (storage_setup_physical_device | trim != '') %}
-[Unit]
-After=storage-setup.service
-Requires=storage-setup.service
-{% endif %}
-
-[Service]
-Environment='DOCKER_STORAGE_OPTIONS=--storage-driver {{ docker_storage_driver }}'

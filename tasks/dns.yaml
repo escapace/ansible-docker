@@ -1,0 +1,79 @@
+---
+- name: discover the optional knot resolver fragment directory
+  ansible.builtin.stat:
+    path: /etc/knot-resolver/config.d
+  register: docker_kresd_directory
+
+- name: inspect owned dns integration destinations without following links
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+  loop: "{{ docker_kresd_owned_files }}"
+  register: docker_kresd_file_status
+
+- name: reject nonregular dns integration destinations
+  ansible.builtin.assert:
+    that: not item.stat.exists or (item.stat.isreg | default(false))
+    fail_msg: "refusing nonregular docker dns destination {{ item.item }}"
+  loop: "{{ docker_kresd_file_status.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: configure discovered knot resolver integration
+  when: docker_dns_managed
+  block:
+    - name: inspect required knot resolver configuration and validator
+      ansible.builtin.stat:
+        path: "{{ item.path }}"
+      loop:
+        - path: /etc/knot-resolver/config.yaml
+          attribute: isreg
+        - path: /usr/bin/kresctl
+          attribute: executable
+      register: docker_kresd_prerequisites
+
+    - name: require the knot resolver integration prerequisites
+      ansible.builtin.assert:
+        that: item.stat.get(item.item.attribute, false)
+        fail_msg: "incomplete knot resolver integration prerequisite {{ item.item.path }}"
+      loop: "{{ docker_kresd_prerequisites.results }}"
+      loop_control:
+        label: "{{ item.item.path }}"
+
+    - name: configure docker dns firewall policies
+      ansible.builtin.template:
+        src: docker-kresd-policy.xml.j2
+        dest: "{{ item.path }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ docker_kresd_firewall_policies }}"
+      loop_control:
+        label: "{{ item.path }}"
+      notify: docker reload firewalld
+
+    - name: configure the docker knot resolver fragment
+      ansible.builtin.template:
+        src: knot-resolver-docker.lua.j2
+        dest: "{{ docker_kresd_fragment_path }}"
+        owner: root
+        group: knot-resolver
+        mode: "0640"
+      notify: docker restart kresd
+
+- name: remove the unavailable docker resolver integration
+  ansible.builtin.file:
+    path: "{{ docker_kresd_fragment_path }}"
+    state: absent
+  when: not docker_dns_managed
+  notify: docker restart kresd
+
+- name: remove unavailable docker dns firewall policies
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ docker_kresd_firewall_policies }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: not docker_dns_managed
+  notify: docker reload firewalld

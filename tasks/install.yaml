@@ -1,0 +1,56 @@
+---
+- name: import the verified docker rpm signing key
+  ansible.builtin.rpm_key:
+    key: https://download.docker.com/linux/centos/gpg
+    fingerprint: 060A61C51B558A7F742B77AAC52FEB6B621E9F35
+    state: present
+
+- name: configure the stable docker repository
+  ansible.builtin.yum_repository:
+    name: docker-ce-stable
+    file: docker-ce
+    description: Docker CE Stable
+    baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+    gpgcheck: true
+    gpgkey: https://download.docker.com/linux/centos/gpg
+    enabled: true
+
+- name: install docker and its native runtime dependencies
+  ansible.builtin.dnf:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      - container-selinux
+      - nftables
+      - policycoreutils
+      - python3
+    state: present
+
+- name: inspect the installed docker daemon
+  ansible.builtin.stat:
+    path: /usr/bin/dockerd
+  register: docker_daemon_binary
+
+- name: observe the installed docker version
+  ansible.builtin.command:
+    argv: [/usr/bin/dockerd, --version]
+  register: docker_daemon_version
+  changed_when: false
+  check_mode: false
+  when: docker_daemon_binary.stat.executable | default(false)
+
+- name: require native nftables support
+  ansible.builtin.assert:
+    that:
+      - docker_daemon_version.stdout is match('^Docker version [0-9]+[.][0-9]+[.][0-9]+,')
+      - docker_daemon_version.stdout.split()[2].rstrip(',') is version('29.0.0', '>=', version_type='semver')
+    fail_msg: native nftables requires docker engine 29.0.0 or newer
+  when: docker_daemon_binary.stat.executable | default(false)
+
+- name: require the installed daemon outside check mode
+  ansible.builtin.assert:
+    that: docker_daemon_binary.stat.executable | default(false)
+  when: not ansible_check_mode

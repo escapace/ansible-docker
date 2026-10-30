@@ -1,0 +1,26 @@
+---
+- name: configure the native dangling image cleanup service
+  ansible.builtin.template:
+    src: docker-dangling-image-prune.service.j2
+    dest: /etc/systemd/system/docker-dangling-image-prune.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - docker daemon-reload
+    - docker stop disabled image cleanup
+
+- name: install the daily dangling image cleanup timer
+  ansible.builtin.copy:
+    src: docker-dangling-image-prune.timer
+    dest: /etc/systemd/system/docker-dangling-image-prune.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: docker daemon-reload
+
+- name: configure dangling image cleanup boot policy without starting the timer
+  ansible.builtin.systemd_service:
+    name: docker-dangling-image-prune.timer
+    enabled: "{{ docker_dangling_image_prune_after | length > 0 }}"
+  notify: docker stop disabled image cleanup

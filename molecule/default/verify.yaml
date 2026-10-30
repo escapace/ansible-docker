@@ -1,0 +1,212 @@
+---
+- name: verify optional tailscale integration and image preparation
+  hosts: all
+  vars:
+    docker_tailscale_integration: true
+  tasks:
+    - name: inspect forwarding after default role convergence
+      ansible.builtin.stat:
+        path: /etc/firewalld/policies/docker-tailscale.xml
+      register: docker_test_default_policy
+
+    - name: require forwarding to be disabled by default despite available integrations
+      ansible.builtin.assert:
+        that:
+          - not docker_test_default_policy.stat.exists
+          - >-
+            (lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') + '/defaults/main.yaml')
+             | from_yaml).docker_tailscale_integration is sameas false
+
+    - name: verify that opt in requires a yaml boolean
+      block:
+        - name: attempt role application with a string opt in
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+          vars:
+            docker_tailscale_integration: "false"
+
+        - name: require rejection of the string opt in
+          ansible.builtin.fail:
+            msg: docker unexpectedly accepted a string instead of a boolean opt in
+      rescue:
+        - name: require failure before persistent role changes
+          ansible.builtin.assert:
+            that: "'validate platform and input types' in ansible_failed_task.name"
+
+    - name: observe the prepared native firewall integration
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: firewalld
+
+    - name: opt in to the available tailscale forwarding integration
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: tailscale
+
+    - name: read the enabled docker forwarding policy
+      ansible.builtin.slurp:
+        src: /etc/firewalld/policies/docker-tailscale.xml
+      register: docker_test_tailscale_policy
+
+    - name: verify the complete native forwarding policy
+      ansible.builtin.assert:
+        that:
+          - >-
+            docker_test_tailscale_policy.content | b64decode ==
+            lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'MOLECULE_PROJECT_DIRECTORY') + '/files/docker-tailscale.xml', rstrip=false)
+
+    - name: inspect the unrelated policy before disabling integration
+      ansible.builtin.stat:
+        path: /etc/firewalld/policies/molecule-unrelated.xml
+      register: docker_test_unrelated_before
+
+    - name: disable forwarding while both integrations remain available
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: tailscale
+      vars:
+        docker_tailscale_integration: false
+
+    - name: inspect the explicitly disabled forwarding policy
+      ansible.builtin.stat:
+        path: /etc/firewalld/policies/docker-tailscale.xml
+      register: docker_test_disabled_policy
+
+    - name: require removal of the opted out forwarding exception
+      ansible.builtin.assert:
+        that: not docker_test_disabled_policy.stat.exists
+
+    - name: opt in again before testing integration removal
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: tailscale
+
+    - name: remove the optional tailscale zone fixture
+      ansible.builtin.file:
+        path: /etc/firewalld/zones/tailscale.xml
+        state: absent
+
+    - name: reconcile the absent tailscale integration
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: tailscale
+
+    - name: inspect the removed docker forwarding policy
+      ansible.builtin.stat:
+        path: /etc/firewalld/policies/docker-tailscale.xml
+      register: docker_test_removed_policy
+
+    - name: inspect the unrelated policy after disabling integration
+      ansible.builtin.stat:
+        path: /etc/firewalld/policies/molecule-unrelated.xml
+      register: docker_test_unrelated_after
+
+    - name: require removal of only the docker forwarding exception
+      ansible.builtin.assert:
+        that:
+          - not docker_test_removed_policy.stat.exists
+          - docker_test_unrelated_after.stat.checksum == docker_test_unrelated_before.stat.checksum
+          - docker_test_unrelated_after.stat.mtime == docker_test_unrelated_before.stat.mtime
+
+    - name: create a nonregular owned destination in the sandbox
+      ansible.builtin.file:
+        src: /etc/firewalld/policies/molecule-unrelated.xml
+        dest: /etc/firewalld/policies/docker-tailscale.xml
+        state: link
+
+    - name: verify that integration refuses a symlink destination
+      block:
+        - name: attempt reconciliation with a symlink destination
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+            tasks_from: tailscale
+
+        - name: require rejection of the symlink destination
+          ansible.builtin.fail:
+            msg: docker unexpectedly accepted a symlink forwarding policy destination
+      rescue:
+        - name: require failure at the owned destination boundary
+          ansible.builtin.assert:
+            that: "'reject nonregular tailscale forwarding policy destinations' in ansible_failed_task.name"
+
+    - name: remove only the sandbox symlink
+      ansible.builtin.file:
+        path: /etc/firewalld/policies/docker-tailscale.xml
+        state: absent
+
+    - name: remove the sandbox policy directory to test absent firewalld integration
+      ansible.builtin.file:
+        path: /etc/firewalld/policies
+        state: absent
+
+    - name: restore the tailscale zone independently of firewalld policies
+      ansible.builtin.copy:
+        dest: /etc/firewalld/zones/tailscale.xml
+        owner: root
+        group: root
+        mode: "0644"
+        src: tailscale.xml
+
+    - name: discover the absent native firewall integration
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: firewalld
+
+    - name: leave forwarding unmanaged without the native policy directory
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: tailscale
+
+    - name: inspect the unavailable forwarding policy
+      ansible.builtin.stat:
+        path: /etc/firewalld/policies/docker-tailscale.xml
+      register: docker_test_unavailable_policy
+
+    - name: require that absent integration creates no forwarding policy
+      ansible.builtin.assert:
+        that: not docker_test_unavailable_policy.stat.exists
+
+    - name: restore the native integration fixtures
+      ansible.builtin.import_tasks: tasks/fixtures.yaml
+
+    - name: rediscover the restored native firewall integration
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: firewalld
+
+    - name: restore the enabled docker forwarding exception
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: tailscale
+
+    - name: restore the default opt out state after testing
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: tailscale
+      vars:
+        docker_tailscale_integration: false
+
+    - name: apply validation and active-only handlers
+      ansible.builtin.meta: flush_handlers
+
+    - name: inspect service state after image preparation
+      ansible.builtin.service_facts:
+
+    - name: require that image preparation did not start services
+      ansible.builtin.assert:
+        that: (ansible_facts.services | default({})).get(item, {}).get('state') != 'running'
+      loop:
+        - docker.service
+        - containerd.service
+        - firewalld.service
+        - tailscaled.service
+
+    - name: validate the complete native firewall configuration
+      ansible.builtin.command:
+        argv: [firewall-offline-cmd, --system-config=/etc/firewalld, --check-config]
+      register: docker_test_firewall_validation
+      changed_when: false
+      failed_when: >-
+        docker_test_firewall_validation.rc != 0 or
+        docker_test_firewall_validation.stdout | trim | length > 0 or
+        docker_test_firewall_validation.stderr | trim | length > 0

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Managed by escapace.docker. -->
+<policy target="ACCEPT" priority="-500">
+  <short>docker tailscale forwarding</short>
+  <description>Allow Docker bridge traffic through Tailscale before its default forwarding deny.</description>
+  <ingress-zone name="docker"/>
+  <egress-zone name="tailscale"/>
+</policy>

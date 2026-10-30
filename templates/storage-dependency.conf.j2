@@ -1,0 +1,11 @@
+[Unit]
+Requires=storage-setup.service
+After=storage-setup.service
+
+[Service]
+# Fail closed instead of writing to the root disk when storage setup fails.
+ExecStartPre=/usr/bin/findmnt --mountpoint /var/lib/docker --source {{ docker_volume_device }} --types xfs --noheadings
+{% if item == 'containerd' %}
+ExecStartPre=/usr/bin/install -d -o root -g root -m 0700 /var/lib/docker/containerd
+ExecStartPre=/usr/sbin/restorecon /var/lib/docker/containerd
+{% endif %}

@@ -1,0 +1,26 @@
+---
+- name: look up all requested docker users before changing membership
+  ansible.builtin.getent:
+    database: passwd
+    key: "{{ item }}"
+    fail_key: true
+  loop: "{{ docker_users }}"
+  register: docker_user_accounts
+
+- name: require exact existing account names rather than uid lookups
+  ansible.builtin.assert:
+    that:
+      - item.item in item.ansible_facts.getent_passwd
+    fail_msg: "{{ item.item }} must identify an existing account by username"
+  loop: "{{ docker_user_accounts.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: add requested users to the docker group
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+    create_home: false
+    state: present
+  loop: "{{ docker_users }}"

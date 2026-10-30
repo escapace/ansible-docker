@@ -1,0 +1,30 @@
+---
+- name: prepare the native firewall policy directory
+  ansible.builtin.file:
+    path: /etc/firewalld/policies
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: prepare a native tailscale zone without invoking its role
+  ansible.builtin.copy:
+    dest: /etc/firewalld/zones/tailscale.xml
+    owner: root
+    group: root
+    mode: "0644"
+    src: tailscale.xml
+
+- name: prepare an unrelated policy to check integration ownership
+  ansible.builtin.copy:
+    dest: /etc/firewalld/policies/molecule-unrelated.xml
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      <?xml version="1.0" encoding="utf-8"?>
+      <policy target="CONTINUE" priority="-700">
+        <ingress-zone name="ANY"/>
+        <egress-zone name="HOST"/>
+        <port port="9" protocol="udp"/>
+      </policy>
