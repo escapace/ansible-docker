@@ -22,10 +22,10 @@
 - name: inspect container data directories before storage initialization
   ansible.builtin.stat:
     path: "{{ item }}"
+  register: docker_previous_directories
   loop:
     - /var/lib/docker
     - /var/lib/containerd
-  register: docker_previous_directories
   when: not docker_storage_configuration.stat.exists
 
 - name: inspect existing data without modifying it
@@ -34,12 +34,12 @@
     hidden: true
     recurse: false
     file_type: any
+  register: docker_previous_data
+
   loop: "{{ docker_previous_directories.results | default([]) }}"
   when:
     - not docker_storage_configuration.stat.exists
     - item.stat.isdir | default(false)
-  register: docker_previous_data
-
 - name: refuse implicit migration of existing container data
   ansible.builtin.assert:
     that: item.matched == 0

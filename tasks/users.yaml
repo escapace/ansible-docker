@@ -4,9 +4,9 @@
     database: passwd
     key: "{{ item }}"
     fail_key: true
-  loop: "{{ docker_users }}"
   register: docker_user_accounts
 
+  loop: "{{ docker_users }}"
 - name: require exact existing account names rather than uid lookups
   ansible.builtin.assert:
     that:

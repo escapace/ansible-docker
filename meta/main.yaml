@@ -2,8 +2,8 @@
 galaxy_info:
   role_name: docker
   description: rootful docker with native nftables and optional dedicated storage
+  author: escapace
   issue_tracker_url: https://github.com/escapace/ansible-docker/issues
   license: Apache-2.0
-  author: escapace
   min_ansible_version: "2.19"
 dependencies: []

@@ -1,32 +1,32 @@
 ---
 docker_bridge_has_ipv6: >-
   {{ docker_bridge_ipv6_subnet is defined and docker_bridge_ipv6_subnet is string and docker_bridge_ipv6_subnet | length > 0 }}
-docker_firewalld_available: "{{ docker_firewalld_policy_directory.stat.isdir | default(false) }}"
-docker_dns_managed: >-
-  {{ docker_firewalld_available and (docker_kresd_directory.stat.isdir | default(false)) }}
-docker_tailscale_managed: >-
-  {{ docker_tailscale_integration and docker_firewalld_available and (docker_tailscale_zone.stat.isreg | default(false)) }}
-docker_tailscale_policy_path: /etc/firewalld/policies/docker-tailscale.xml
+docker_bridge_ipv4_address: "{{ docker_bridge_ipv4 | ansible.utils.ipaddr('address') }}"
+docker_bridge_ipv6_address: "{{ docker_bridge_ipv6_gateway_cidr | ansible.utils.ipaddr('address') }}"
+docker_bridge_ipv6_gateway_cidr: "{{ docker_bridge_ipv6_subnet | ansible.utils.ipaddr('1') }}"
 docker_build_cache_min_free_space_bytes: >-
   {{ docker_build_cache_min_free_space | upper | ansible.builtin.human_to_bytes }}
-docker_bridge_ipv4_address: "{{ docker_bridge_ipv4 | ansible.utils.ipaddr('address') }}"
-docker_bridge_ipv6_gateway_cidr: "{{ docker_bridge_ipv6_subnet | ansible.utils.ipaddr('1') }}"
-docker_bridge_ipv6_address: "{{ docker_bridge_ipv6_gateway_cidr | ansible.utils.ipaddr('address') }}"
+docker_dns_managed: >-
+  {{ docker_firewalld_available and (docker_kresd_directory.stat.isdir | default(false)) }}
+docker_firewalld_available: "{{ docker_firewalld_policy_directory.stat.isdir | default(false) }}"
 docker_kresd_addresses: >-
   {{ [docker_bridge_ipv4_address] + ([docker_bridge_ipv6_address] if docker_bridge_has_ipv6 else []) }}
 # Negative priorities run before zone targets and the broader Tailscale host policy.
 docker_kresd_firewall_policies:
-  - path: /etc/firewalld/policies/docker-kresd-allow.xml
+  - action: accept
     ingress: docker
+    path: /etc/firewalld/policies/docker-kresd-allow.xml
     priority: -32768
-    action: accept
-  - path: /etc/firewalld/policies/docker-kresd-deny.xml
+  - action: drop
     ingress: ANY
+    path: /etc/firewalld/policies/docker-kresd-deny.xml
     priority: -32767
-    action: drop
 docker_kresd_fragment_path: /etc/knot-resolver/config.d/700-docker.lua
 docker_kresd_owned_files: >-
   {{ [docker_kresd_fragment_path] + (docker_kresd_firewall_policies | map(attribute='path') | list) }}
-docker_volume_device: "/dev/{{ docker_storage_volume_group }}/docker"
 # Match Docker's daemon-owned data-root permissions across reboots.
 docker_root_mode: "0710"
+docker_tailscale_managed: >-
+  {{ docker_tailscale_integration and docker_firewalld_available and (docker_tailscale_zone.stat.isreg | default(false)) }}
+docker_tailscale_policy_path: /etc/firewalld/policies/docker-tailscale.xml
+docker_volume_device: "/dev/{{ docker_storage_volume_group }}/docker"

@@ -1,6 +1,5 @@
 ---
 - name: docker gather fresh service facts
-  ansible.builtin.service_facts:
   listen:
     - docker daemon-reload
     - docker apply forwarding
@@ -9,24 +8,27 @@
     - docker restart kresd
     - docker reload firewalld
 
+  ansible.builtin.service_facts:
 - name: docker inspect the systemd runtime directory
-  ansible.builtin.stat:
-    path: /run/systemd/system
-  register: docker_systemd_runtime
   listen:
     - docker daemon-reload
     - docker stop disabled image cleanup
 
+  ansible.builtin.stat:
+    path: /run/systemd/system
+  register: docker_systemd_runtime
 - name: docker reload the active systemd manager
+  listen: docker daemon-reload
+
   ansible.builtin.systemd_service:
     daemon_reload: true
   when:
     - not ansible_check_mode
     - ansible_facts.get('service_mgr') == 'systemd'
     - docker_systemd_runtime.stat.isdir | default(false)
-  listen: docker daemon-reload
-
 - name: docker apply forwarding on an active firewall or docker host
+  listen: docker apply forwarding
+
   ansible.builtin.command:
     argv: [/usr/lib/systemd/systemd-sysctl, --strict, /etc/sysctl.d/99-docker-forwarding.conf]
   changed_when: true
@@ -35,31 +37,31 @@
     - >-
       (ansible_facts.services | default({})).get('firewalld.service', {}).get('state') == 'running' or
       (ansible_facts.services | default({})).get('docker.service', {}).get('state') == 'running'
-  listen: docker apply forwarding
-
 - name: docker validate changed firewalld configuration
+  listen: docker reload firewalld
+
   ansible.builtin.command:
     argv: [firewall-offline-cmd, --system-config=/etc/firewalld, --check-config]
   register: docker_firewalld_validation
   changed_when: false
-  check_mode: false
   failed_when: >-
     docker_firewalld_validation.rc != 0 or
     docker_firewalld_validation.stdout | trim | length > 0 or
     docker_firewalld_validation.stderr | trim | length > 0
+  check_mode: false
   when: not ansible_check_mode
+- name: docker reload active firewalld synchronously
   listen: docker reload firewalld
 
-- name: docker reload active firewalld synchronously
   ansible.builtin.command:
     argv: [firewall-cmd, --reload]
   changed_when: true
   when:
     - not ansible_check_mode
     - (ansible_facts.services | default({})).get('firewalld.service', {}).get('state') == 'running'
-  listen: docker reload firewalld
-
 - name: docker validate knot resolver configuration
+  listen: docker restart kresd
+
   ansible.builtin.command:
     argv: [/usr/bin/kresctl, validate, /etc/knot-resolver/config.yaml]
   changed_when: false
@@ -67,36 +69,35 @@
   when: >-
     docker_dns_managed or
     (ansible_facts.services | default({})).get('knot-resolver.service', {}).get('state') == 'running'
+- name: docker restart active knot resolver
   listen: docker restart kresd
 
-- name: docker restart active knot resolver
   ansible.builtin.systemd_service:
     name: knot-resolver.service
     state: restarted
   when:
     - not ansible_check_mode
     - (ansible_facts.services | default({})).get('knot-resolver.service', {}).get('state') == 'running'
-  listen: docker restart kresd
-
 - name: docker restart active containerd
+  listen: docker restart containerd
+
   ansible.builtin.systemd_service:
     name: containerd.service
     state: restarted
   when:
     - not ansible_check_mode
     - (ansible_facts.services | default({})).get('containerd.service', {}).get('state') == 'running'
-  listen: docker restart containerd
-
 - name: docker restart the active daemon
+  listen: docker restart daemon
+
   ansible.builtin.systemd_service:
     name: docker.service
     state: restarted
   when:
     - not ansible_check_mode
     - (ansible_facts.services | default({})).get('docker.service', {}).get('state') == 'running'
-  listen: docker restart daemon
-
 - name: docker stop disabled image cleanup units
+  listen: docker stop disabled image cleanup
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     state: stopped
@@ -108,4 +109,3 @@
     - ansible_facts.get('service_mgr') == 'systemd'
     - docker_systemd_runtime.stat.isdir | default(false)
     - docker_dangling_image_prune_after | length == 0
-  listen: docker stop disabled image cleanup

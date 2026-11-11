@@ -30,11 +30,11 @@
     - name: inspect existing standard docker zone definitions
       ansible.builtin.stat:
         path: "{{ item }}"
+      register: docker_firewalld_zone_files
+
       loop:
         - /etc/firewalld/zones/docker.xml
         - /usr/lib/firewalld/zones/docker.xml
-      register: docker_firewalld_zone_files
-
     - name: bootstrap the standard docker zone only when absent
       ansible.builtin.copy:
         src: docker-zone.xml

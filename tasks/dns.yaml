@@ -8,9 +8,9 @@
   ansible.builtin.stat:
     path: "{{ item }}"
     follow: false
-  loop: "{{ docker_kresd_owned_files }}"
   register: docker_kresd_file_status
 
+  loop: "{{ docker_kresd_owned_files }}"
 - name: reject nonregular dns integration destinations
   ansible.builtin.assert:
     that: not item.stat.exists or (item.stat.isreg | default(false))
@@ -25,13 +25,13 @@
     - name: inspect required knot resolver configuration and validator
       ansible.builtin.stat:
         path: "{{ item.path }}"
+      register: docker_kresd_prerequisites
+
       loop:
         - path: /etc/knot-resolver/config.yaml
           attribute: isreg
         - path: /usr/bin/kresctl
           attribute: executable
-      register: docker_kresd_prerequisites
-
     - name: require the knot resolver integration prerequisites
       ansible.builtin.assert:
         that: item.stat.get(item.item.attribute, false)

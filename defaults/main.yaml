@@ -1,9 +1,9 @@
 ---
-docker_users: []
-docker_tailscale_integration: false
+docker_bridge_ipv4: 172.17.0.1/16
+docker_bridge_ipv6_subnet: fd3b:7a4e:6b20:1::/64
 docker_build_cache_min_free_space: "10GB"
 docker_dangling_image_prune_after: "168h"
 docker_storage_device: ""
 docker_storage_volume_group: docker
-docker_bridge_ipv4: 172.17.0.1/16
-docker_bridge_ipv6_subnet: fd3b:7a4e:6b20:1::/64
+docker_tailscale_integration: false
+docker_users: []
